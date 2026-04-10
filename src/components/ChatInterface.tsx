@@ -3,6 +3,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Send, BookOpen, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -14,8 +15,11 @@ interface ChatInterfaceProps {
   onBack: () => void;
 }
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/islamic-chat`;
+
 const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -26,7 +30,6 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -41,20 +44,113 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
       content: input.trim(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
 
-    // Simulated AI response - will be replaced with actual AI integration
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: generateMockResponse(userMessage.content, language),
+    let assistantContent = "";
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: updatedMessages
+            .filter((m) => m.id !== "welcome")
+            .map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        const errorMsg = err.error || "Something went wrong. Please try again.";
+        if (resp.status === 429) {
+          toast({ title: "Rate Limited", description: errorMsg, variant: "destructive" });
+        } else if (resp.status === 402) {
+          toast({ title: "Credits Exhausted", description: errorMsg, variant: "destructive" });
+        } else {
+          toast({ title: "Error", description: errorMsg, variant: "destructive" });
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (!resp.body) throw new Error("No response body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let streamDone = false;
+
+      const upsertAssistant = (nextChunk: string) => {
+        assistantContent += nextChunk;
+        const content = assistantContent;
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant" && last.id !== "welcome") {
+            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content } : m));
+          }
+          return [...prev, { id: `ai-${Date.now()}`, role: "assistant", content }];
+        });
       };
-      setMessages((prev) => [...prev, aiResponse]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) upsertAssistant(content);
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Flush remaining
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const c = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (c) upsertAssistant(c);
+          } catch { /* ignore */ }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Failed to get a response. Please try again.", variant: "destructive" });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -66,7 +162,6 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="w-5 h-5" />
@@ -80,19 +175,15 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
               {t("appName")}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {language === "ar" ? "متصل" : "Online"}
+              {language === "ar" ? "مدعوم بالذكاء الاصطناعي" : "AI-Powered"}
             </p>
           </div>
         </div>
       </header>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-thin">
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
               className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 ${
                 msg.role === "user"
@@ -110,7 +201,7 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
             </div>
           </div>
         ))}
-        {isLoading && (
+        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3">
               <div className="flex gap-1.5">
@@ -124,11 +215,9 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t border-border bg-card p-4">
         <div className="max-w-3xl mx-auto flex gap-2">
           <textarea
-            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -150,19 +239,5 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     </div>
   );
 };
-
-function generateMockResponse(question: string, lang: string): string {
-  const q = question.toLowerCase();
-  
-  if (q.includes("prayer") || q.includes("salah") || q.includes("صلاة")) {
-    return lang === "ar"
-      ? `## الصلاة في الإسلام\n\nالصلاة هي الركن الثاني من أركان الإسلام. فرض الله على المسلمين خمس صلوات في اليوم والليلة.\n\n**المرجع:** صحيح البخاري، كتاب الصلاة، حديث رقم 528\n\n> عن عبد الله بن عمر رضي الله عنهما قال: قال رسول الله ﷺ: "بُنِيَ الإسلام على خمس..."\n\n📖 *سورة البقرة: 43* — "وَأَقِيمُوا الصَّلَاةَ وَآتُوا الزَّكَاةَ وَارْكَعُوا مَعَ الرَّاكِعِينَ"`
-      : `## Prayer (Salah) in Islam\n\nPrayer is the second pillar of Islam. Allah has ordained five daily prayers upon Muslims.\n\n**Reference:** Sahih al-Bukhari, Book of Prayer, Hadith 528\n\n> The Prophet ﷺ said: "Islam is built upon five pillars..."\n\n📖 *Surah Al-Baqarah 2:43* — "And establish prayer and give zakah and bow with those who bow [in worship]."`;
-  }
-
-  return lang === "ar"
-    ? `شكراً لسؤالك. هذا موضوع مهم في الفقه الإسلامي.\n\nبناءً على المصادر الإسلامية الموثوقة:\n\n**المرجع:** القرآن الكريم والسنة النبوية الشريفة\n\n> يمكنك الاطلاع على المزيد من التفاصيل في كتب الفقه المعتمدة.\n\n*ملاحظة: للحصول على فتوى شرعية محددة، يُنصح بالرجوع إلى عالم دين متخصص.*`
-    : `Thank you for your question. This is an important topic in Islamic knowledge.\n\nBased on authentic Islamic sources:\n\n**Reference:** The Holy Quran and Prophetic Sunnah\n\n> For detailed rulings, scholars recommend consulting established works of Islamic jurisprudence.\n\n*Note: For specific religious rulings (fatwa), it is recommended to consult a qualified Islamic scholar.*`;
-}
 
 export default ChatInterface;
