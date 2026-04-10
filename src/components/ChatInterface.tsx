@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Send, BookOpen, ArrowLeft } from "lucide-react";
+import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
+import MadhabToggle from "@/components/MadhabToggle";
+import QuickTopics from "@/components/QuickTopics";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  bookmarked?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -29,19 +32,32 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [madhabCompare, setMadhabCompare] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const showQuickTopics = messages.length <= 1;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const toggleBookmark = (id: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, bookmarked: !m.bookmarked } : m))
+    );
+    toast({
+      title: language === "ar" ? "تم الحفظ" : "Saved",
+      description: language === "ar" ? "تم حفظ الإجابة في المفضلة" : "Answer bookmarked for later",
+    });
+  };
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: text.trim(),
     };
 
     const updatedMessages = [...messages, userMessage];
@@ -62,6 +78,7 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
           messages: updatedMessages
             .filter((m) => m.id !== "welcome")
             .map((m) => ({ role: m.role, content: m.content })),
+          madhabCompare,
         }),
       });
 
@@ -129,7 +146,6 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
         }
       }
 
-      // Flush remaining
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -153,6 +169,8 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     }
   };
 
+  const handleSend = () => sendMessage(input);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -162,45 +180,73 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <header className="border-b border-border bg-card px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <h1 className={`font-semibold text-foreground text-sm ${language === "ar" ? "font-arabic" : ""}`}>
-              {t("appName")}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {language === "ar" ? "مدعوم بالذكاء الاصطناعي" : "AI-Powered"}
-            </p>
+      {/* Header */}
+      <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h1 className={`font-semibold text-foreground text-sm ${language === "ar" ? "font-arabic" : ""}`}>
+                {t("appName")}
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                {language === "ar" ? "مدعوم بالذكاء الاصطناعي" : "AI-Powered"}
+              </p>
+            </div>
           </div>
         </div>
+        <MadhabToggle enabled={madhabCompare} onToggle={() => setMadhabCompare(!madhabCompare)} />
       </header>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-thin">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-sm"
-                  : "bg-card border border-border rounded-bl-sm"
-              }`}
-            >
-              <div className={`text-sm leading-relaxed ${language === "ar" ? "font-arabic" : ""} ${msg.role === "assistant" ? "prose prose-sm max-w-none text-card-foreground" : ""}`}>
-                {msg.role === "assistant" ? (
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                ) : (
-                  msg.content
-                )}
+            <div className="relative group max-w-[85%] md:max-w-[70%]">
+              <div
+                className={`rounded-2xl px-4 py-3 ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-br-sm"
+                    : "bg-card border border-border rounded-bl-sm"
+                }`}
+              >
+                <div className={`text-sm leading-relaxed ${language === "ar" ? "font-arabic" : ""} ${msg.role === "assistant" ? "prose prose-sm max-w-none text-card-foreground" : ""}`}>
+                  {msg.role === "assistant" ? (
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  ) : (
+                    msg.content
+                  )}
+                </div>
               </div>
+              {/* Bookmark button for AI responses */}
+              {msg.role === "assistant" && msg.id !== "welcome" && (
+                <button
+                  onClick={() => toggleBookmark(msg.id)}
+                  className="absolute -top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded-full p-1.5 shadow-sm hover:bg-accent/10"
+                >
+                  {msg.bookmarked ? (
+                    <BookmarkCheck className="w-3.5 h-3.5 text-accent" />
+                  ) : (
+                    <Bookmark className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </button>
+              )}
             </div>
           </div>
         ))}
+
+        {/* Quick Topics (only shown at start) */}
+        {showQuickTopics && (
+          <div className="max-w-lg mx-auto">
+            <QuickTopics onSelectTopic={sendMessage} />
+          </div>
+        )}
+
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3">
@@ -215,6 +261,16 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Madhab indicator */}
+      {madhabCompare && (
+        <div className="bg-gold/10 border-t border-gold/20 px-4 py-1.5 text-center">
+          <span className={`text-xs text-accent font-medium ${language === "ar" ? "font-arabic" : ""}`}>
+            ⚖️ {language === "ar" ? "وضع مقارنة المذاهب — ستتم مقارنة الآراء الأربعة" : "Madhab Comparison Mode — All 4 schools will be compared"}
+          </span>
+        </div>
+      )}
+
+      {/* Input */}
       <div className="border-t border-border bg-card p-4">
         <div className="max-w-3xl mx-auto flex gap-2">
           <textarea
