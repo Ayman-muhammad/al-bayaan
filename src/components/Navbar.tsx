@@ -1,8 +1,8 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Globe, MessageSquare, Headphones, Home } from "lucide-react";
+import { Globe, MessageSquare, Headphones, Home, BookOpen } from "lucide-react";
 
-type View = "home" | "chat" | "audio";
+type View = "home" | "chat" | "audio" | "quran";
 
 interface NavbarProps {
   currentView: View;
@@ -32,6 +32,15 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
           >
             <Home className="w-4 h-4" />
             <span className={`hidden sm:inline ${language === "ar" ? "font-arabic" : ""}`}>{t("home")}</span>
+          </Button>
+          <Button
+            variant={currentView === "quran" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onNavigate("quran")}
+            className="gap-1.5"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span className={`hidden sm:inline ${language === "ar" ? "font-arabic" : ""}`}>{language === "ar" ? "القرآن" : "Quran"}</span>
           </Button>
           <Button
             variant={currentView === "chat" ? "secondary" : "ghost"}
