@@ -1,20 +1,32 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Headphones, Quote } from "lucide-react";
+import { BookOpen, Headphones, Quote, MessageSquare } from "lucide-react";
 import islamicBg from "@/assets/islamic-pattern-bg.jpg";
 import DailyVerse from "@/components/DailyVerse";
 
+type View = "home" | "chat" | "audio" | "quran";
+
 interface HeroSectionProps {
   onStartChat: () => void;
+  onNavigate: (view: View) => void;
 }
 
-const HeroSection = ({ onStartChat }: HeroSectionProps) => {
-  const { t, language } = useLanguage();
+const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
+  const { language } = useLanguage();
+  const { t } = useLanguage();
+  const isAr = language === "ar";
 
   const features = [
-    { icon: BookOpen, title: t("featureAI"), desc: t("featureAIDesc") },
-    { icon: Headphones, title: t("featureAudio"), desc: t("featureAudioDesc") },
-    { icon: Quote, title: t("featureCitations"), desc: t("featureCitationsDesc") },
+    { icon: BookOpen, title: t("featureAI"), desc: t("featureAIDesc"), action: () => onNavigate("chat") },
+    { icon: Headphones, title: t("featureAudio"), desc: t("featureAudioDesc"), action: () => onNavigate("audio") },
+    { icon: Quote, title: t("featureCitations"), desc: t("featureCitationsDesc"), action: () => onNavigate("chat") },
+  ];
+
+  const quickLinks = [
+    { emoji: "📖", label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
+    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Comparison", desc: isAr ? "قارن بين المذاهب الأربعة" : "Compare all 4 schools", action: () => onNavigate("chat") },
+    { emoji: "🎧", label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
+    { emoji: "💬", label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
   ];
 
   return (
@@ -26,20 +38,39 @@ const HeroSection = ({ onStartChat }: HeroSectionProps) => {
         <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
           <div className="space-y-2">
             <h2 className="text-sm font-medium tracking-widest uppercase text-accent">﷽</h2>
-            <h1 className={`text-5xl md:text-7xl font-bold text-foreground ${language === "ar" ? "font-arabic" : ""}`}>
+            <h1 className={`text-5xl md:text-7xl font-bold text-foreground ${isAr ? "font-arabic" : ""}`}>
               <span className="text-gradient-gold">{t("appName")}</span>
             </h1>
-            <p className={`text-xl md:text-2xl text-muted-foreground mt-4 ${language === "ar" ? "font-arabic" : ""}`}>
+            <p className={`text-xl md:text-2xl text-muted-foreground mt-4 ${isAr ? "font-arabic" : ""}`}>
               {t("tagline")}
             </p>
           </div>
-          <p className={`text-muted-foreground max-w-xl mx-auto ${language === "ar" ? "font-arabic" : ""}`}>
+          <p className={`text-muted-foreground max-w-xl mx-auto ${isAr ? "font-arabic" : ""}`}>
             {t("subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="hero" size="lg" onClick={onStartChat} className="min-w-[200px]">
               {t("startChat")}
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Links — all clickable */}
+      <section className="py-8 px-4 bg-card/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {quickLinks.map((item, i) => (
+              <button
+                key={i}
+                onClick={item.action}
+                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer"
+              >
+                <span className="text-2xl">{item.emoji}</span>
+                <p className={`text-sm font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
+                <p className={`text-xs text-muted-foreground mt-1 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
+              </button>
+            ))}
           </div>
         </div>
       </section>
@@ -51,45 +82,29 @@ const HeroSection = ({ onStartChat }: HeroSectionProps) => {
         </div>
       </section>
 
-      {/* Unique Feature Highlights */}
-      <section className="py-8 px-4 bg-card/50">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            {[
-              { emoji: "⚖️", label: language === "ar" ? "مقارنة المذاهب" : "Madhab Comparison", desc: language === "ar" ? "قارن بين المذاهب الأربعة" : "Compare all 4 schools" },
-              { emoji: "🔍", label: language === "ar" ? "تحقق الأحاديث" : "Hadith Verification", desc: language === "ar" ? "درجة كل حديث" : "Grading for every hadith" },
-              { emoji: "🔖", label: language === "ar" ? "حفظ الإجابات" : "Bookmark Answers", desc: language === "ar" ? "احفظ للمراجعة لاحقاً" : "Save for later review" },
-              { emoji: "⚡", label: language === "ar" ? "أسئلة سريعة" : "Quick Topics", desc: language === "ar" ? "بنقرة واحدة" : "One-tap questions" },
-            ].map((item, i) => (
-              <div key={i} className="p-4 rounded-xl bg-background border border-border">
-                <span className="text-2xl">{item.emoji}</span>
-                <p className={`text-sm font-semibold text-foreground mt-2 ${language === "ar" ? "font-arabic" : ""}`}>{item.label}</p>
-                <p className={`text-xs text-muted-foreground mt-1 ${language === "ar" ? "font-arabic" : ""}`}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
+      {/* Features — clickable */}
       <section className="py-20 px-4 bg-card">
         <div className="max-w-5xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-12 text-foreground ${language === "ar" ? "font-arabic" : ""}`}>
+          <h2 className={`text-3xl font-bold text-center mb-12 text-foreground ${isAr ? "font-arabic" : ""}`}>
             {t("features")}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, i) => (
-              <div key={i} className="p-6 rounded-xl bg-background border border-border hover:border-accent hover:glow-gold transition-all duration-300 group">
+              <button
+                key={i}
+                onClick={feature.action}
+                className="p-6 rounded-xl bg-background border border-border hover:border-accent hover:glow-gold transition-all duration-300 group text-left"
+              >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className={`text-lg font-semibold text-foreground mb-2 ${language === "ar" ? "font-arabic" : ""}`}>
+                <h3 className={`text-lg font-semibold text-foreground mb-2 ${isAr ? "font-arabic" : ""}`}>
                   {feature.title}
                 </h3>
-                <p className={`text-muted-foreground text-sm leading-relaxed ${language === "ar" ? "font-arabic" : ""}`}>
+                <p className={`text-muted-foreground text-sm leading-relaxed ${isAr ? "font-arabic" : ""}`}>
                   {feature.desc}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
