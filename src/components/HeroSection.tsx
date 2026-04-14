@@ -1,10 +1,10 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Headphones, Quote, MessageSquare } from "lucide-react";
+import { BookOpen, Headphones, Quote, GraduationCap, Clock, Compass } from "lucide-react";
 import islamicBg from "@/assets/islamic-pattern-bg.jpg";
 import DailyVerse from "@/components/DailyVerse";
 
-type View = "home" | "chat" | "audio" | "quran";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
 
 interface HeroSectionProps {
   onStartChat: () => void;
@@ -12,8 +12,7 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
-  const { language } = useLanguage();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const isAr = language === "ar";
 
   const features = [
@@ -24,8 +23,10 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
 
   const quickLinks = [
     { emoji: "📖", label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
-    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Comparison", desc: isAr ? "قارن بين المذاهب الأربعة" : "Compare all 4 schools", action: () => onNavigate("chat") },
+    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
     { emoji: "🎧", label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
+    { emoji: "🕌", label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
+    { emoji: "📚", label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
     { emoji: "💬", label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
   ];
 
@@ -33,7 +34,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     <div className="min-h-screen flex flex-col">
       {/* Hero */}
       <section className="relative flex-1 flex items-center justify-center px-4 py-20 overflow-hidden">
-        <img src={islamicBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" width={1920} height={1080} />
+        <img src={islamicBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" width={1920} height={1080} loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
         <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
           <div className="space-y-2">
@@ -52,23 +53,27 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
             <Button variant="hero" size="lg" onClick={onStartChat} className="min-w-[200px]">
               {t("startChat")}
             </Button>
+            <Button variant="outline" size="lg" onClick={() => onNavigate("hafiz")} className="min-w-[200px] gap-2">
+              <GraduationCap className="w-5 h-5" />
+              {isAr ? "ابدأ الحفظ" : "Start Memorizing"}
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Quick Links — all clickable */}
+      {/* Quick Links */}
       <section className="py-8 px-4 bg-card/50">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
             {quickLinks.map((item, i) => (
               <button
                 key={i}
                 onClick={item.action}
-                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer group"
               >
-                <span className="text-2xl">{item.emoji}</span>
-                <p className={`text-sm font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
-                <p className={`text-xs text-muted-foreground mt-1 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
+                <span className="text-2xl group-hover:scale-110 inline-block transition-transform">{item.emoji}</span>
+                <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
+                <p className={`text-[10px] text-muted-foreground mt-1 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
               </button>
             ))}
           </div>
@@ -82,7 +87,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
         </div>
       </section>
 
-      {/* Features — clickable */}
+      {/* Features */}
       <section className="py-20 px-4 bg-card">
         <div className="max-w-5xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-12 text-foreground ${isAr ? "font-arabic" : ""}`}>
