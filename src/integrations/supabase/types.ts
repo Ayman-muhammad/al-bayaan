@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookmarks: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      memorization_progress: {
+        Row: {
+          accuracy_score: number | null
+          ayah_from: number
+          ayah_to: number
+          created_at: string
+          id: string
+          last_practiced: string | null
+          mastered: boolean | null
+          repetitions: number
+          surah_id: number
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          ayah_from?: number
+          ayah_to?: number
+          created_at?: string
+          id?: string
+          last_practiced?: string | null
+          mastered?: boolean | null
+          repetitions?: number
+          surah_id: number
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          ayah_from?: number
+          ayah_to?: number
+          created_at?: string
+          id?: string
+          last_practiced?: string | null
+          mastered?: boolean | null
+          repetitions?: number
+          surah_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          preferred_language: string | null
+          preferred_reciter: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          preferred_language?: string | null
+          preferred_reciter?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          preferred_language?: string | null
+          preferred_reciter?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reading_progress: {
+        Row: {
+          completed: boolean | null
+          id: string
+          last_ayah: number
+          surah_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          id?: string
+          last_ayah?: number
+          surah_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          id?: string
+          last_ayah?: number
+          surah_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
