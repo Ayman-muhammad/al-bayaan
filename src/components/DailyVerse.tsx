@@ -54,12 +54,29 @@ const DAILY_CONTENT = [
   },
 ];
 
+// Additional dynamic verses for variety
+const EXTRA_VERSES = [
+  { ar: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً", en: "Our Lord, give us good in this world and good in the Hereafter.", ref: "Surah Al-Baqarah 2:201" },
+  { ar: "وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ", en: "And when My servants ask you about Me - indeed I am near.", ref: "Surah Al-Baqarah 2:186" },
+  { ar: "يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ", en: "O you who have believed, seek help through patience and prayer.", ref: "Surah Al-Baqarah 2:153" },
+];
+
 const DailyVerse = () => {
   const { language } = useLanguage();
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(() => Math.floor(Math.random() * 200) + 50);
 
+  // Use combination of day + hour segment for more dynamic content
   const dayIndex = new Date().getDay();
-  const daily = DAILY_CONTENT[dayIndex];
+  const hourSegment = Math.floor(new Date().getHours() / 8); // Changes 3 times a day
+  const contentIndex = (dayIndex * 3 + hourSegment) % DAILY_CONTENT.length;
+  const daily = DAILY_CONTENT[contentIndex];
+  const extraVerse = EXTRA_VERSES[(dayIndex + hourSegment) % EXTRA_VERSES.length];
+
+  const handleLike = () => {
+    setLiked(!liked);
+    setLikeCount((c) => (liked ? c - 1 : c + 1));
+  };
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-4 hover:border-accent transition-colors">
@@ -70,8 +87,9 @@ const DailyVerse = () => {
             {language === "ar" ? "رحلتك الروحية اليومية" : "Daily Spiritual Journey"}
           </h3>
         </div>
-        <button onClick={() => setLiked(!liked)} className="text-muted-foreground hover:text-accent transition-colors">
-          <Heart className={`w-5 h-5 ${liked ? "fill-accent text-accent" : ""}`} />
+        <button onClick={handleLike} className="flex items-center gap-1 text-muted-foreground hover:text-accent transition-colors">
+          <Heart className={`w-5 h-5 transition-all duration-300 ${liked ? "fill-accent text-accent scale-110" : ""}`} />
+          <span className="text-xs tabular-nums">{likeCount}</span>
         </button>
       </div>
 
@@ -97,6 +115,15 @@ const DailyVerse = () => {
           <BookOpen className="w-3 h-3 text-primary" />
           <span className="text-xs text-primary font-medium">{daily.hadithRef}</span>
         </div>
+      </div>
+
+      {/* Extra dynamic verse */}
+      <div className="bg-background rounded-xl p-3 border-l-4 border-muted">
+        <p className="font-arabic text-sm text-foreground leading-relaxed text-right mb-1">
+          {extraVerse.ar}
+        </p>
+        <p className="text-xs text-muted-foreground italic">{extraVerse.en}</p>
+        <span className="text-[10px] text-muted-foreground">{extraVerse.ref}</span>
       </div>
 
       {/* Reflection */}
