@@ -1,4 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Quote, GraduationCap, Clock, Compass } from "lucide-react";
 import islamicBg from "@/assets/islamic-pattern-bg.jpg";
@@ -8,7 +9,7 @@ type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
 
 interface HeroSectionProps {
   onStartChat: () => void;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: string) => void;
 }
 
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
