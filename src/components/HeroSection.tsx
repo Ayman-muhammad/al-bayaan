@@ -14,6 +14,7 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   const { language, t } = useLanguage();
+  const { user } = useAuth();
   const isAr = language === "ar";
 
   const features = [
