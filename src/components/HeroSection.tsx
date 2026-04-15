@@ -5,7 +5,7 @@ import { BookOpen, Headphones, Quote, GraduationCap, Clock, Compass } from "luci
 import islamicBg from "@/assets/islamic-pattern-bg.jpg";
 import DailyVerse from "@/components/DailyVerse";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
+
 
 interface HeroSectionProps {
   onStartChat: () => void;
