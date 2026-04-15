@@ -69,9 +69,10 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <button
                 key={i}
                 onClick={item.action}
-                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up"
+                style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
               >
-                <span className="text-2xl group-hover:scale-110 inline-block transition-transform">{item.emoji}</span>
+                <span className="text-2xl group-hover:scale-125 inline-block transition-transform duration-300">{item.emoji}</span>
                 <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
                 <p className={`text-[10px] text-muted-foreground mt-1 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
               </button>
