@@ -1,18 +1,20 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Quote, GraduationCap, Clock, Compass } from "lucide-react";
 import islamicBg from "@/assets/islamic-pattern-bg.jpg";
 import DailyVerse from "@/components/DailyVerse";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
+
 
 interface HeroSectionProps {
   onStartChat: () => void;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: string) => void;
 }
 
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   const { language, t } = useLanguage();
+  const { user } = useAuth();
   const isAr = language === "ar";
 
   const features = [
@@ -23,11 +25,13 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
 
   const quickLinks = [
     { emoji: "📖", label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
-    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
+    { emoji: "📚", label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
     { emoji: "🎧", label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
     { emoji: "🕌", label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
-    { emoji: "📚", label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
+    { emoji: "📈", label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تتبع تقدمك" : "Track your progress", action: () => onNavigate("journey") },
+    { emoji: "⭐", label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
     { emoji: "💬", label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
+    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
   ];
 
   return (
@@ -64,7 +68,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
       {/* Quick Links */}
       <section className="py-8 px-4 bg-card/50">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
             {quickLinks.map((item, i) => (
               <button
                 key={i}
