@@ -6,12 +6,14 @@ import AudioLibrary from "@/components/AudioLibrary";
 import QuranReader from "@/components/QuranReader";
 import PrayerTimes from "@/components/PrayerTimes";
 import HafizMode from "@/components/HafizMode";
+import FavoritesHub from "@/components/FavoritesHub";
+import MyJourney from "@/components/MyJourney";
 import AuthPage from "@/pages/Auth";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import { useFeedback } from "@/components/FeedbackToast";
 import { useAuth } from "@/contexts/AuthContext";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth" | "favorites" | "journey";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -46,31 +48,32 @@ const Index = () => {
     }
   }, [user, prevUser]);
 
-  const handleNavigate = useCallback((view: View) => {
-    if (view === "hafiz" && !user) {
+  // Save last position
+  useEffect(() => {
+    if (currentView !== "home" && currentView !== "auth") {
+      localStorage.setItem("al-bayan-last-view", currentView);
+    }
+  }, [currentView]);
+
+  const handleNavigate = useCallback((view: string) => {
+    const v = view as View;
+    if ((v === "hafiz" || v === "favorites" || v === "journey") && !user) {
       setCurrentView("auth");
       return;
     }
-
-    // Show contextual feedback
-    const feedbackKey = FEEDBACK_MAP[view];
-    if (feedbackKey && view !== "home") {
+    const feedbackKey = FEEDBACK_MAP[v];
+    if (feedbackKey && v !== "home") {
       showFeedback(feedbackKey as any);
     }
-
-    setCurrentView(view);
+    setCurrentView(v);
   }, [user, showFeedback]);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Welcome overlay on login */}
       {showWelcome && (
-        <WelcomeOverlay
-          userName={userName}
-          onComplete={() => setShowWelcome(false)}
-        />
+        <WelcomeOverlay userName={userName} onComplete={() => setShowWelcome(false)} />
       )}
 
       {currentView === "home" && (
@@ -82,29 +85,14 @@ const Index = () => {
         </>
       )}
 
-      {currentView === "chat" && (
-        <ChatInterface onBack={() => setCurrentView("home")} />
-      )}
-
-      {currentView === "audio" && (
-        <AudioLibrary onBack={() => setCurrentView("home")} />
-      )}
-
-      {currentView === "quran" && (
-        <QuranReader onBack={() => setCurrentView("home")} />
-      )}
-
-      {currentView === "prayer" && (
-        <PrayerTimes onBack={() => setCurrentView("home")} />
-      )}
-
-      {currentView === "hafiz" && (
-        <HafizMode onBack={() => setCurrentView("home")} />
-      )}
-
-      {currentView === "auth" && (
-        <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("home")} />
-      )}
+      {currentView === "chat" && <ChatInterface onBack={() => setCurrentView("home")} />}
+      {currentView === "audio" && <AudioLibrary onBack={() => setCurrentView("home")} />}
+      {currentView === "quran" && <QuranReader onBack={() => setCurrentView("home")} />}
+      {currentView === "prayer" && <PrayerTimes onBack={() => setCurrentView("home")} />}
+      {currentView === "hafiz" && <HafizMode onBack={() => setCurrentView("home")} />}
+      {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+      {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+      {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("home")} />}
     </div>
   );
 };

@@ -1,13 +1,11 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Globe, MessageSquare, Headphones, Home, BookOpen, Clock, GraduationCap, User, LogOut } from "lucide-react";
-
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
+import { Globe, Headphones, Home, BookOpen, Clock, GraduationCap, User, LogOut, Bookmark, TrendingUp } from "lucide-react";
 
 interface NavbarProps {
-  currentView: View;
-  onNavigate: (view: View) => void;
+  currentView: string;
+  onNavigate: (view: string) => void;
   user?: any;
 }
 
@@ -32,18 +30,25 @@ const Navbar = ({ currentView, onNavigate, user }: NavbarProps) => {
             <BookOpen className="w-4 h-4" />
             <span className={`hidden md:inline text-xs ${language === "ar" ? "font-arabic" : ""}`}>{language === "ar" ? "القرآن" : "Quran"}</span>
           </Button>
-          <Button variant={currentView === "audio" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("audio")} className="gap-1 px-2">
-            <Headphones className="w-4 h-4" />
-            <span className={`hidden lg:inline text-xs ${language === "ar" ? "font-arabic" : ""}`}>{t("audioLibrary")}</span>
-          </Button>
           <Button variant={currentView === "hafiz" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("hafiz")} className="gap-1 px-2">
             <GraduationCap className="w-4 h-4" />
-            <span className={`hidden lg:inline text-xs ${language === "ar" ? "font-arabic" : ""}`}>{language === "ar" ? "حفظ" : "Hafiz"}</span>
+            <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "حفظ" : "Hafiz"}</span>
           </Button>
           <Button variant={currentView === "prayer" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("prayer")} className="gap-1 px-2">
             <Clock className="w-4 h-4" />
-            <span className={`hidden lg:inline text-xs ${language === "ar" ? "font-arabic" : ""}`}>{language === "ar" ? "الصلاة" : "Prayer"}</span>
+            <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "الصلاة" : "Prayer"}</span>
           </Button>
+          {user && (
+            <>
+              <Button variant={currentView === "journey" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("journey")} className="gap-1 px-2">
+                <TrendingUp className="w-4 h-4" />
+                <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "رحلتي" : "Journey"}</span>
+              </Button>
+              <Button variant={currentView === "favorites" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("favorites")} className="gap-1 px-2">
+                <Bookmark className="w-4 h-4" />
+              </Button>
+            </>
+          )}
           <div className="w-px h-6 bg-border mx-0.5" />
           <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-1 px-2">
             <Globe className="w-4 h-4" />
