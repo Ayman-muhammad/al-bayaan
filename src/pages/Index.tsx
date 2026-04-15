@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ChatInterface from "@/components/ChatInterface";
@@ -7,34 +7,72 @@ import QuranReader from "@/components/QuranReader";
 import PrayerTimes from "@/components/PrayerTimes";
 import HafizMode from "@/components/HafizMode";
 import AuthPage from "@/pages/Auth";
+import WelcomeOverlay from "@/components/WelcomeOverlay";
+import { useFeedback } from "@/components/FeedbackToast";
 import { useAuth } from "@/contexts/AuthContext";
 
 type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth";
 
+const FEEDBACK_MAP: Partial<Record<View, string>> = {
+  quran: "navigate_quran",
+  audio: "navigate_audio",
+  prayer: "navigate_prayer",
+  hafiz: "navigate_hafiz",
+  chat: "navigate_chat",
+};
+
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>("home");
   const { user } = useAuth();
+  const { showFeedback } = useFeedback();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [prevUser, setPrevUser] = useState<string | null>(null);
 
   // Handle OAuth redirect
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes("access_token") || hash.includes("type=recovery")) {
-      // Clear hash after processing
       window.location.hash = "";
     }
   }, []);
 
-  const handleNavigate = (view: View) => {
-    // Features that need auth
-    if ((view === "hafiz") && !user) {
+  // Show welcome overlay on login
+  useEffect(() => {
+    if (user && user.id !== prevUser) {
+      setShowWelcome(true);
+      setPrevUser(user.id);
+    } else if (!user) {
+      setPrevUser(null);
+    }
+  }, [user, prevUser]);
+
+  const handleNavigate = useCallback((view: View) => {
+    if (view === "hafiz" && !user) {
       setCurrentView("auth");
       return;
     }
+
+    // Show contextual feedback
+    const feedbackKey = FEEDBACK_MAP[view];
+    if (feedbackKey && view !== "home") {
+      showFeedback(feedbackKey as any);
+    }
+
     setCurrentView(view);
-  };
+  }, [user, showFeedback]);
+
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Welcome overlay on login */}
+      {showWelcome && (
+        <WelcomeOverlay
+          userName={userName}
+          onComplete={() => setShowWelcome(false)}
+        />
+      )}
+
       {currentView === "home" && (
         <>
           <Navbar currentView={currentView} onNavigate={handleNavigate} user={user} />
