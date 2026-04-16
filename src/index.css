@@ -196,4 +196,20 @@
     background-color: hsl(var(--primary) / 0.3);
     border-radius: 3px;
   }
+
+  @keyframes float {
+    0% { transform: translateY(0px) scale(1); opacity: 0.3; }
+    100% { transform: translateY(-20px) scale(1.5); opacity: 0.6; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 0%, hsl(var(--accent) / 0.1) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
 }

@@ -1,21 +1,37 @@
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Headphones, Quote, GraduationCap, Clock, Compass } from "lucide-react";
-import islamicBg from "@/assets/islamic-pattern-bg.jpg";
+import { BookOpen, Headphones, Quote, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import DailyVerse from "@/components/DailyVerse";
-
-
+import LiveStreamSection from "@/components/LiveStreamSection";
+import kaabaImg from "@/assets/kaaba-hero.jpg";
+import medinaImg from "@/assets/medina-mosque.jpg";
+import quranImg from "@/assets/quran-open.jpg";
 
 interface HeroSectionProps {
   onStartChat: () => void;
   onNavigate: (view: string) => void;
 }
 
+const HERO_SLIDES = [
+  { image: kaabaImg, titleAr: "البيان", titleEn: "Al-Bayan AI", subtitleAr: "رفيقك القرآني الذكي", subtitleEn: "Your Intelligent Quranic Companion" },
+  { image: medinaImg, titleAr: "المدينة المنورة", titleEn: "City of Light", subtitleAr: "صلِّ على النبي ﷺ", subtitleEn: "Send blessings upon the Prophet ﷺ" },
+  { image: quranImg, titleAr: "اقرأ وتدبر", titleEn: "Read & Reflect", subtitleAr: "القرآن الكريم بين يديك", subtitleEn: "The Noble Quran at your fingertips" },
+];
+
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const isAr = language === "ar";
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   const features = [
     { icon: BookOpen, title: t("featureAI"), desc: t("featureAIDesc"), action: () => onNavigate("chat") },
@@ -34,26 +50,64 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
   ];
 
+  const slide = HERO_SLIDES[currentSlide];
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero */}
-      <section className="relative flex-1 flex items-center justify-center px-4 py-20 overflow-hidden">
-        <img src={islamicBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" width={1920} height={1080} loading="lazy" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+      {/* Hero with Image Carousel */}
+      <section className="relative flex-1 flex items-center justify-center px-4 py-20 overflow-hidden min-h-[70vh]">
+        {/* Background images with crossfade */}
+        {HERO_SLIDES.map((s, i) => (
+          <img
+            key={i}
+            src={s.image}
+            alt=""
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              i === currentSlide ? "opacity-30" : "opacity-0"
+            }`}
+            width={1920}
+            height={1080}
+            {...(i === 0 ? {} : { loading: "lazy" as const })}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-accent/30 rounded-full"
+              style={{
+                top: `${20 + Math.random() * 60}%`,
+                left: `${10 + Math.random() * 80}%`,
+                animation: `float ${4 + i * 0.5}s ease-in-out infinite alternate`,
+                animationDelay: `${i * 0.8}s`,
+              }}
+            />
+          ))}
+        </div>
+
         <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
           <div className="space-y-2">
-            <h2 className="text-sm font-medium tracking-widest uppercase text-accent">﷽</h2>
-            <h1 className={`text-5xl md:text-7xl font-bold text-foreground ${isAr ? "font-arabic" : ""}`}>
-              <span className="text-gradient-gold">{t("appName")}</span>
+            <h2 className="text-sm font-medium tracking-widest uppercase text-accent animate-fade-in">﷽</h2>
+            <h1
+              className={`text-5xl md:text-7xl font-bold text-foreground ${isAr ? "font-arabic" : ""} transition-all duration-700`}
+              key={currentSlide}
+            >
+              <span className="text-gradient-gold animate-scale-in inline-block">
+                {isAr ? slide.titleAr : slide.titleEn}
+              </span>
             </h1>
-            <p className={`text-xl md:text-2xl text-muted-foreground mt-4 ${isAr ? "font-arabic" : ""}`}>
-              {t("tagline")}
+            <p
+              className={`text-xl md:text-2xl text-muted-foreground mt-4 ${isAr ? "font-arabic" : ""} animate-fade-in`}
+              key={`sub-${currentSlide}`}
+            >
+              {isAr ? slide.subtitleAr : slide.subtitleEn}
             </p>
           </div>
-          <p className={`text-muted-foreground max-w-xl mx-auto ${isAr ? "font-arabic" : ""}`}>
-            {t("subtitle")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "300ms", animationFillMode: "both" }}>
             <Button variant="hero" size="lg" onClick={onStartChat} className="min-w-[200px]">
               {t("startChat")}
             </Button>
@@ -61,6 +115,31 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <GraduationCap className="w-5 h-5" />
               {isAr ? "ابدأ الحفظ" : "Start Memorizing"}
             </Button>
+          </div>
+
+          {/* Slide indicators */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+              className="w-8 h-8 rounded-full bg-card/50 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-foreground" />
+            </button>
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`transition-all duration-300 rounded-full ${
+                  i === currentSlide ? "w-8 h-2 bg-accent" : "w-2 h-2 bg-muted-foreground/30"
+                }`}
+              />
+            ))}
+            <button
+              onClick={() => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+              className="w-8 h-8 rounded-full bg-card/50 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
           </div>
         </div>
       </section>
@@ -85,6 +164,9 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
         </div>
       </section>
 
+      {/* Live Streams from Mecca & Medina */}
+      <LiveStreamSection />
+
       {/* Daily Spiritual Journey */}
       <section className="py-12 px-4">
         <div className="max-w-2xl mx-auto">
@@ -103,7 +185,8 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <button
                 key={i}
                 onClick={feature.action}
-                className="p-6 rounded-xl bg-background border border-border hover:border-accent hover:glow-gold transition-all duration-300 group text-left"
+                className="p-6 rounded-xl bg-background border border-border hover:border-accent hover:glow-gold transition-all duration-300 group text-left animate-slide-up"
+                style={{ animationDelay: `${i * 100}ms`, animationFillMode: "both" }}
               >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
                   <feature.icon className="w-6 h-6 text-primary" />

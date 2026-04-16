@@ -1,7 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Globe, Headphones, Home, BookOpen, Clock, GraduationCap, User, LogOut, Bookmark, TrendingUp } from "lucide-react";
+import { Globe, Home, BookOpen, Clock, GraduationCap, User, LogOut, Bookmark, TrendingUp } from "lucide-react";
 
 interface NavbarProps {
   currentView: string;
@@ -38,17 +38,14 @@ const Navbar = ({ currentView, onNavigate, user }: NavbarProps) => {
             <Clock className="w-4 h-4" />
             <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "الصلاة" : "Prayer"}</span>
           </Button>
-          {user && (
-            <>
-              <Button variant={currentView === "journey" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("journey")} className="gap-1 px-2">
-                <TrendingUp className="w-4 h-4" />
-                <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "رحلتي" : "Journey"}</span>
-              </Button>
-              <Button variant={currentView === "favorites" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("favorites")} className="gap-1 px-2">
-                <Bookmark className="w-4 h-4" />
-              </Button>
-            </>
-          )}
+          {/* Journey & Favorites always visible — no auth gate */}
+          <Button variant={currentView === "journey" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("journey")} className="gap-1 px-2">
+            <TrendingUp className="w-4 h-4" />
+            <span className={`hidden lg:inline text-xs`}>{language === "ar" ? "رحلتي" : "Journey"}</span>
+          </Button>
+          <Button variant={currentView === "favorites" ? "secondary" : "ghost"} size="sm" onClick={() => onNavigate("favorites")} className="gap-1 px-2">
+            <Bookmark className="w-4 h-4" />
+          </Button>
           <div className="w-px h-6 bg-border mx-0.5" />
           <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-1 px-2">
             <Globe className="w-4 h-4" />
