@@ -57,16 +57,13 @@ const Index = () => {
 
   const handleNavigate = useCallback((view: string) => {
     const v = view as View;
-    if ((v === "hafiz" || v === "favorites" || v === "journey") && !user) {
-      setCurrentView("auth");
-      return;
-    }
+    // No auth gates — all features accessible. Auth is optional for sync.
     const feedbackKey = FEEDBACK_MAP[v];
     if (feedbackKey && v !== "home") {
       showFeedback(feedbackKey as any);
     }
     setCurrentView(v);
-  }, [user, showFeedback]);
+  }, [showFeedback]);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0];
 

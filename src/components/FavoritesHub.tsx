@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Bookmark, BookOpen, MessageSquare, Headphones,
-  Search, Tag, Trash2, Heart, ExternalLink
+  Search, Tag, Trash2, Heart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +15,16 @@ interface FavoritesHubProps {
 }
 
 type Tab = "ayahs" | "chat" | "audio";
+
+const LS_BOOKMARKS_KEY = "al-bayan-local-bookmarks";
+
+const getLocalBookmarks = (): any[] => {
+  try { return JSON.parse(localStorage.getItem(LS_BOOKMARKS_KEY) || "[]"); } catch { return []; }
+};
+
+const saveLocalBookmarks = (bookmarks: any[]) => {
+  localStorage.setItem(LS_BOOKMARKS_KEY, JSON.stringify(bookmarks));
+};
 
 const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const { language } = useLanguage();
@@ -28,23 +38,29 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchBookmarks = useCallback(async () => {
-    if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("bookmarks")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (data) setBookmarks(data);
+    if (user) {
+      const { data } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (data) setBookmarks(data);
+    } else {
+      setBookmarks(getLocalBookmarks());
+    }
     setLoading(false);
   }, [user]);
 
-  useEffect(() => {
-    fetchBookmarks();
-  }, [fetchBookmarks]);
+  useEffect(() => { fetchBookmarks(); }, [fetchBookmarks]);
 
   const deleteBookmark = async (id: string) => {
-    await supabase.from("bookmarks").delete().eq("id", id);
+    if (user) {
+      await supabase.from("bookmarks").delete().eq("id", id);
+    } else {
+      const updated = getLocalBookmarks().filter((b) => b.id !== id);
+      saveLocalBookmarks(updated);
+    }
     setBookmarks((prev) => prev.filter((b) => b.id !== id));
     toast({ title: isAr ? "تم الحذف" : "Removed", duration: 2000 });
   };
@@ -83,9 +99,7 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${
-              tab === t.key
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
+              tab === t.key ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <t.icon className="w-4 h-4" />
@@ -111,19 +125,21 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
         </div>
       </div>
 
+      {/* Sync prompt */}
+      {!user && bookmarks.length > 0 && (
+        <div className="mx-4 mt-3 bg-accent/5 border border-accent/20 rounded-xl p-3 text-center animate-fade-in">
+          <p className={`text-xs text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
+            {isAr ? "سجّل الدخول لمزامنة المفضلة عبر الأجهزة" : "Sign in to sync favorites across devices"}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => onNavigate("auth")} className="mt-2">
+            {isAr ? "تسجيل الدخول" : "Sign In"}
+          </Button>
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
-        {!user ? (
-          <div className="text-center py-16 space-y-4 animate-fade-in">
-            <Bookmark className="w-12 h-12 text-muted-foreground mx-auto" />
-            <p className={`text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
-              {isAr ? "سجّل الدخول لحفظ المفضلة" : "Sign in to save favorites"}
-            </p>
-            <Button variant="hero" onClick={() => onNavigate("auth")}>
-              {isAr ? "تسجيل الدخول" : "Sign In"}
-            </Button>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
@@ -146,7 +162,6 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
               className="bg-card border border-border rounded-xl p-4 space-y-2 animate-slide-up hover:border-primary/30 transition-all group"
               style={{ animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
             >
-              {/* Ayah bookmark */}
               {bookmark.type === "ayahs" && (
                 <>
                   <p className="font-arabic text-foreground leading-relaxed text-right" dir="rtl">
@@ -156,9 +171,7 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
                     <p className="text-sm text-muted-foreground italic">{(bookmark.content as any).translation}</p>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-accent font-medium">
-                      {(bookmark.content as any)?.reference || ""}
-                    </span>
+                    <span className="text-xs text-accent font-medium">{(bookmark.content as any)?.reference || ""}</span>
                     {(bookmark.content as any)?.tags?.length > 0 && (
                       <div className="flex gap-1">
                         {(bookmark.content as any).tags.map((tag: string) => (
@@ -172,51 +185,32 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
                 </>
               )}
 
-              {/* Chat bookmark */}
               {bookmark.type === "chat" && (
                 <>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Q: {(bookmark.content as any)?.query || ""}
-                  </p>
-                  <p className="text-sm text-foreground line-clamp-3">
-                    {(bookmark.content as any)?.response || ""}
-                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">Q: {(bookmark.content as any)?.query || ""}</p>
+                  <p className="text-sm text-foreground line-clamp-3">{(bookmark.content as any)?.response || ""}</p>
                 </>
               )}
 
-              {/* Audio bookmark */}
               {bookmark.type === "audio" && (
                 <div className="flex items-center gap-3">
                   <Headphones className="w-8 h-8 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {(bookmark.content as any)?.surahName || ""}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {(bookmark.content as any)?.reciterName || ""}
-                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">{(bookmark.content as any)?.surahName || ""}</p>
+                    <p className="text-xs text-muted-foreground">{(bookmark.content as any)?.reciterName || ""}</p>
                   </div>
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(bookmark.created_at).toLocaleDateString()}
-                </span>
-                <button
-                  onClick={() => deleteBookmark(bookmark.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                >
+                <span className="text-[10px] text-muted-foreground">{new Date(bookmark.created_at).toLocaleDateString()}</span>
+                <button onClick={() => deleteBookmark(bookmark.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Note */}
               {(bookmark.content as any)?.note && (
-                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2 mt-1">
-                  📝 {(bookmark.content as any).note}
-                </p>
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2 mt-1">📝 {(bookmark.content as any).note}</p>
               )}
             </div>
           ))
