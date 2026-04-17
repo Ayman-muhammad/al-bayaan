@@ -8,12 +8,13 @@ import PrayerTimes from "@/components/PrayerTimes";
 import HafizMode from "@/components/HafizMode";
 import FavoritesHub from "@/components/FavoritesHub";
 import MyJourney from "@/components/MyJourney";
+import DhikrPage from "@/components/DhikrPage";
 import AuthPage from "@/pages/Auth";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import { useFeedback } from "@/components/FeedbackToast";
 import { useAuth } from "@/contexts/AuthContext";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth" | "favorites" | "journey";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth" | "favorites" | "journey" | "dhikr";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -87,6 +88,7 @@ const Index = () => {
       {currentView === "quran" && <QuranReader onBack={() => setCurrentView("home")} />}
       {currentView === "prayer" && <PrayerTimes onBack={() => setCurrentView("home")} />}
       {currentView === "hafiz" && <HafizMode onBack={() => setCurrentView("home")} />}
+      {currentView === "dhikr" && <DhikrPage onBack={() => setCurrentView("home")} />}
       {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("home")} />}
