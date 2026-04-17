@@ -1,28 +1,21 @@
 {
-  "name": "Al-Bayan AI - Islamic Knowledge Assistant",
-  "short_name": "Al-Bayan AI",
-  "description": "AI-powered Islamic knowledge assistant with Quran, Hadith, and audio recitations",
+  "name": "Al Bayani — The Quranic Companion",
+  "short_name": "Al Bayani",
+  "description": "Read the Mushaf with tajweed, memorize with Hafiz Mode, listen live from Makkah & Madinah, and track your spiritual journey.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f4ef",
-  "theme_color": "#2d6b5a",
+  "theme_color": "#0D4D3D",
   "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Read Quran", "url": "/?view=quran", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Hafiz Mode", "url": "/?view=hafiz", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Prayer Times", "url": "/?view=prayer", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Dhikr", "url": "/?view=dhikr", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

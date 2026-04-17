@@ -55,7 +55,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero with Image Carousel */}
-      <section className="relative flex-1 flex items-center justify-center px-4 py-20 overflow-hidden min-h-[70vh]">
+      <section className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-20 overflow-hidden min-h-[60vh] sm:min-h-[70vh]">
         {/* Background images with crossfade */}
         {HERO_SLIDES.map((s, i) => (
           <img
@@ -88,11 +88,11 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
           ))}
         </div>
 
-        <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
+        <div className="max-w-3xl mx-auto text-center space-y-6 sm:space-y-8 relative z-10 w-full">
           <div className="space-y-2">
-            <h2 className="text-sm font-medium tracking-widest uppercase text-accent animate-fade-in">﷽</h2>
+            <h2 className="text-xs sm:text-sm font-medium tracking-widest uppercase text-accent animate-fade-in">﷽</h2>
             <h1
-              className={`text-5xl md:text-7xl font-bold text-foreground ${isAr ? "font-arabic" : ""} transition-all duration-700`}
+              className={`text-4xl sm:text-5xl md:text-7xl font-bold text-foreground ${isAr ? "font-arabic" : ""} transition-all duration-700 leading-tight`}
               key={currentSlide}
             >
               <span className="text-gradient-gold animate-scale-in inline-block">
@@ -100,18 +100,26 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               </span>
             </h1>
             <p
-              className={`text-xl md:text-2xl text-muted-foreground mt-4 ${isAr ? "font-arabic" : ""} animate-fade-in`}
+              className={`text-base sm:text-xl md:text-2xl text-muted-foreground mt-3 sm:mt-4 px-2 ${isAr ? "font-arabic" : ""} animate-fade-in`}
               key={`sub-${currentSlide}`}
             >
               {isAr ? slide.subtitleAr : slide.subtitleEn}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "300ms", animationFillMode: "both" }}>
-            <Button variant="hero" size="lg" onClick={onStartChat} className="min-w-[200px]">
+          <div
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-slide-up px-4 sm:px-0"
+            style={{ animationDelay: "300ms", animationFillMode: "both" }}
+          >
+            <Button variant="hero" size="lg" onClick={onStartChat} className="w-full sm:w-auto sm:min-w-[200px]">
               {t("startChat")}
             </Button>
-            <Button variant="outline" size="lg" onClick={() => onNavigate("hafiz")} className="min-w-[200px] gap-2">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => onNavigate("hafiz")}
+              className="w-full sm:w-auto sm:min-w-[200px] gap-2"
+            >
               <GraduationCap className="w-5 h-5" />
               {isAr ? "ابدأ الحفظ" : "Start Memorizing"}
             </Button>
@@ -121,7 +129,8 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-              className="w-8 h-8 rounded-full bg-card/50 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+              className="w-9 h-9 rounded-full bg-card/60 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+              aria-label="Previous slide"
             >
               <ChevronLeft className="w-4 h-4 text-foreground" />
             </button>
@@ -129,6 +138,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
+                aria-label={`Slide ${i + 1}`}
                 className={`transition-all duration-300 rounded-full ${
                   i === currentSlide ? "w-8 h-2 bg-accent" : "w-2 h-2 bg-muted-foreground/30"
                 }`}
@@ -136,7 +146,8 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
             ))}
             <button
               onClick={() => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
-              className="w-8 h-8 rounded-full bg-card/50 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+              className="w-9 h-9 rounded-full bg-card/60 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
+              aria-label="Next slide"
             >
               <ChevronRight className="w-4 h-4 text-foreground" />
             </button>
@@ -145,19 +156,19 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
       </section>
 
       {/* Quick Links */}
-      <section className="py-8 px-4 bg-card/50">
+      <section className="py-6 sm:py-8 px-3 sm:px-4 bg-card/50">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 text-center">
             {quickLinks.map((item, i) => (
               <button
                 key={i}
                 onClick={item.action}
-                className="p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up"
+                className="p-3 sm:p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up"
                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
               >
                 <span className="text-2xl group-hover:scale-125 inline-block transition-transform duration-300">{item.emoji}</span>
                 <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
-                <p className={`text-[10px] text-muted-foreground mt-1 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
+                <p className={`text-[10px] text-muted-foreground mt-1 line-clamp-2 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
               </button>
             ))}
           </div>

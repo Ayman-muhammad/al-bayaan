@@ -42,6 +42,15 @@
     --cream: 40 33% 97%;
     --cream-dark: 40 25% 90%;
 
+    /* Tajweed rule colors (QCF-style palette) */
+    --tajweed-ghunna: 0 72% 50%;
+    --tajweed-ikhfa: 217 80% 55%;
+    --tajweed-idgham: 142 62% 42%;
+    --tajweed-qalqalah: 28 90% 55%;
+    --tajweed-madd: 270 60% 55%;
+    --tajweed-iqlab: 48 95% 55%;
+    --tajweed-izhar: 330 70% 60%;
+
     --sidebar-background: 158 40% 12%;
     --sidebar-foreground: 40 33% 97%;
     --sidebar-primary: 43 80% 55%;

@@ -417,9 +417,9 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
               </div>
 
               {/* Ayah Display */}
-              <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-3">
+              <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 text-center space-y-3">
                 {showAyah ? (
-                  <p className="font-arabic text-xl leading-[2.2] text-foreground" dir="rtl">
+                  <p className="font-arabic text-lg sm:text-xl leading-[2.2] text-foreground break-words" dir="rtl">
                     {ayahs[currentAyahIndex].text}
                   </p>
                 ) : (
@@ -461,33 +461,38 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
               )}
 
               {/* Controls */}
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
                 <Button
                   variant="outline"
-                  size="lg"
+                  size="icon"
+                  className="h-12 w-12 sm:h-14 sm:w-14 shrink-0"
                   onClick={() => { setTranscript(""); setAccuracy(null); setShowResult(null); }}
+                  aria-label="Reset"
                 >
                   <RotateCcw className="w-5 h-5" />
                 </Button>
                 <button
                   onClick={isListening ? stopListening : startListening}
-                  className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                  aria-label={isListening ? "Stop" : "Record"}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg shrink-0 ${
                     isListening
                       ? "bg-destructive animate-pulse"
                       : "bg-primary hover:bg-primary/90"
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="w-8 h-8 text-primary-foreground" />
+                    <MicOff className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
                   ) : (
-                    <Mic className="w-8 h-8 text-primary-foreground" />
+                    <Mic className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
                   )}
                 </button>
                 <Button
                   variant="hero"
-                  size="lg"
+                  size="icon"
+                  className="h-12 w-12 sm:h-14 sm:w-14 shrink-0"
                   onClick={checkRecitation}
                   disabled={!transcript}
+                  aria-label="Check"
                 >
                   <CheckCircle2 className="w-5 h-5" />
                 </Button>
