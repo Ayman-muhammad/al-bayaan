@@ -62,6 +62,15 @@ export default {
           DEFAULT: "hsl(var(--cream))",
           dark: "hsl(var(--cream-dark))",
         },
+        tajweed: {
+          ghunna: "hsl(var(--tajweed-ghunna))",
+          ikhfa: "hsl(var(--tajweed-ikhfa))",
+          idgham: "hsl(var(--tajweed-idgham))",
+          qalqalah: "hsl(var(--tajweed-qalqalah))",
+          madd: "hsl(var(--tajweed-madd))",
+          iqlab: "hsl(var(--tajweed-iqlab))",
+          izhar: "hsl(var(--tajweed-izhar))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
