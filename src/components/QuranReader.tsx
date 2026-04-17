@@ -326,7 +326,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           </div>
 
           {/* Tafsir & display controls */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-border bg-card/50">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
             <BookMarked className="w-4 h-4 text-primary shrink-0" />
             <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
               {isAr ? "التفسير:" : "Tafsir:"}
@@ -335,7 +335,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               <button
                 key={mode}
                 onClick={() => handleTafsirChange(mode)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap ${
                   tafsirMode === mode
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -365,22 +365,22 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                 </div>
               )}
               {ayahs.map((ayah) => (
-                <div key={ayah.number} className="bg-card border border-border rounded-xl p-4 space-y-3 hover:border-primary/30 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <span className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                <div key={ayah.number} className="bg-card border border-border rounded-xl p-3 sm:p-4 space-y-3 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <span className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                       {ayah.numberInSurah}
                     </span>
-                    <p className="text-right font-arabic text-lg leading-[2.2] text-foreground flex-1" dir="rtl">
+                    <p className="text-right font-arabic text-lg sm:text-xl leading-[2.2] text-foreground flex-1 break-words" dir="rtl">
                       {ayah.text}
                     </p>
                   </div>
                   {displayMode === "full" && ayah.translation && (
-                    <p className="text-sm text-muted-foreground leading-relaxed pl-11 border-t border-border/50 pt-3">
+                    <p className="text-sm text-muted-foreground leading-relaxed sm:pl-11 border-t border-border/50 pt-3">
                       {ayah.translation}
                     </p>
                   )}
                   {displayMode === "full" && currentTafsirKey && ayah[currentTafsirKey] && (
-                    <div className="pl-11 border-t border-border/50 pt-3">
+                    <div className="sm:pl-11 border-t border-border/50 pt-3">
                       <p className="text-xs font-medium text-accent mb-1">
                         {tafsirMode === "ibn-kathir" ? (isAr ? "تفسير ابن كثير" : "Tafsir Ibn Kathir") : (isAr ? "تفسير الجلالين" : "Tafsir Al-Jalalayn")}
                       </p>
