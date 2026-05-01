@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,8 +14,6 @@ import {
   BookOpen,
   Clock,
   GraduationCap,
-  User,
-  LogOut,
   Bookmark,
   TrendingUp,
   Menu,
@@ -28,12 +25,10 @@ import {
 interface NavbarProps {
   currentView: string;
   onNavigate: (view: string) => void;
-  user?: any;
 }
 
-const Navbar = ({ currentView, onNavigate, user }: NavbarProps) => {
+const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const { t, language, toggleLanguage } = useLanguage();
-  const { signOut } = useAuth();
   const [open, setOpen] = useState(false);
 
   // Close drawer on route change
@@ -146,28 +141,6 @@ const Navbar = ({ currentView, onNavigate, user }: NavbarProps) => {
             </span>
           </Button>
 
-          {user ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={signOut}
-              className="h-9 w-9 hidden sm:inline-flex"
-              aria-label="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onNavigate("auth")}
-              className="h-9 w-9 hidden sm:inline-flex"
-              aria-label="Sign in"
-            >
-              <User className="w-4 h-4" />
-            </Button>
-          )}
-
           {/* Mobile menu trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -218,29 +191,9 @@ const Navbar = ({ currentView, onNavigate, user }: NavbarProps) => {
               </div>
 
               <div className="border-t border-border p-3">
-                {user ? (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3 h-11"
-                    onClick={signOut}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className={isAr ? "font-arabic" : ""}>
-                      {isAr ? "تسجيل الخروج" : "Sign out"}
-                    </span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3 h-11"
-                    onClick={() => onNavigate("auth")}
-                  >
-                    <User className="w-4 h-4" />
-                    <span className={isAr ? "font-arabic" : ""}>
-                      {t("signIn")}
-                    </span>
-                  </Button>
-                )}
+                <p className={`text-[11px] text-center text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
+                  {isAr ? "بياناتك محفوظة على جهازك" : "Your progress is saved on this device"}
+                </p>
               </div>
             </SheetContent>
           </Sheet>

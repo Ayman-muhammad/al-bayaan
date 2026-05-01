@@ -9,12 +9,10 @@ import HafizMode from "@/components/HafizMode";
 import FavoritesHub from "@/components/FavoritesHub";
 import MyJourney from "@/components/MyJourney";
 import DhikrPage from "@/components/DhikrPage";
-import AuthPage from "@/pages/Auth";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import { useFeedback } from "@/components/FeedbackToast";
-import { useAuth } from "@/contexts/AuthContext";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "auth" | "favorites" | "journey" | "dhikr";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -26,12 +24,10 @@ const FEEDBACK_MAP: Partial<Record<View, string>> = {
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>("home");
-  const { user } = useAuth();
   const { showFeedback } = useFeedback();
   const [showWelcome, setShowWelcome] = useState(false);
-  const [prevUser, setPrevUser] = useState<string | null>(null);
 
-  // Handle OAuth redirect
+  // Clean stray hash params from any prior auth flow
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes("access_token") || hash.includes("type=recovery")) {
@@ -39,26 +35,24 @@ const Index = () => {
     }
   }, []);
 
-  // Show welcome overlay on login
+  // Show welcome overlay once per device on first visit
   useEffect(() => {
-    if (user && user.id !== prevUser) {
+    const seen = localStorage.getItem("al-bayani-welcomed");
+    if (!seen) {
       setShowWelcome(true);
-      setPrevUser(user.id);
-    } else if (!user) {
-      setPrevUser(null);
+      localStorage.setItem("al-bayani-welcomed", "1");
     }
-  }, [user, prevUser]);
+  }, []);
 
   // Save last position
   useEffect(() => {
-    if (currentView !== "home" && currentView !== "auth") {
+    if (currentView !== "home") {
       localStorage.setItem("al-bayan-last-view", currentView);
     }
   }, [currentView]);
 
   const handleNavigate = useCallback((view: string) => {
     const v = view as View;
-    // No auth gates — all features accessible. Auth is optional for sync.
     const feedbackKey = FEEDBACK_MAP[v];
     if (feedbackKey && v !== "home") {
       showFeedback(feedbackKey as any);
@@ -66,17 +60,15 @@ const Index = () => {
     setCurrentView(v);
   }, [showFeedback]);
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0];
-
   return (
     <div className="min-h-screen bg-background">
       {showWelcome && (
-        <WelcomeOverlay userName={userName} onComplete={() => setShowWelcome(false)} />
+        <WelcomeOverlay onComplete={() => setShowWelcome(false)} />
       )}
 
       {currentView === "home" && (
         <>
-          <Navbar currentView={currentView} onNavigate={handleNavigate} user={user} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} />
           <div className="pt-14">
             <HeroSection onStartChat={() => handleNavigate("chat")} onNavigate={handleNavigate} />
           </div>
@@ -91,7 +83,6 @@ const Index = () => {
       {currentView === "dhikr" && <DhikrPage onBack={() => setCurrentView("home")} />}
       {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
-      {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("home")} />}
     </div>
   );
 };
