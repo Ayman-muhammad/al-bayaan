@@ -116,10 +116,29 @@
 
   .font-arabic {
     font-family: var(--font-arabic);
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
+    font-variant-ligatures: common-ligatures contextual;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    line-height: 2.1;
+    letter-spacing: 0;
+    word-spacing: 0.05em;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    hyphens: none;
+    text-wrap: pretty;
   }
 
   [dir="rtl"] {
     font-family: var(--font-arabic);
+    text-align: right;
+  }
+
+  /* Tighter line-height for short Arabic labels (titles/buttons) */
+  .font-arabic.leading-tight,
+  .font-arabic.leading-none,
+  .font-arabic.leading-snug {
+    line-height: 1.4;
   }
 }
 
