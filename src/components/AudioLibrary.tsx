@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
   ArrowLeft, Play, Pause, User, Search, ChevronRight,
-  SkipForward, SkipBack, Volume2, MapPin, X, BookOpen, ChevronDown, ChevronUp
+  SkipForward, SkipBack, Volume2, MapPin, X, BookOpen, ChevronDown, ChevronUp,
+  Repeat, Gauge
 } from "lucide-react";
 import { SURAHS, RECITERS, getSurahAudioUrl, type Reciter } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -35,6 +36,9 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
   const [ayahs, setAyahs] = useState<Ayah[]>([]);
   const [loadingText, setLoadingText] = useState(false);
   const [showQuranText, setShowQuranText] = useState(true);
+  const [autoplayNext, setAutoplayNext] = useState(true);
+
+  const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 
   // Filtered reciters
   const filteredReciters = !searchQuery.trim()
@@ -114,6 +118,30 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
     if (!selectedSurahId || selectedSurahId <= 1) return;
     handleSurahSelect(selectedSurahId - 1);
   };
+
+  // Auto-advance to next surah on end
+  useEffect(() => {
+    player.onEnded(() => {
+      if (!autoplayNext) return;
+      if (selectedSurahId && selectedSurahId < 114) {
+        handleSurahSelect(selectedSurahId + 1);
+      }
+    });
+    return () => player.onEnded(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplayNext, selectedSurahId, selectedReciter]);
+
+  // Update lock-screen / Media Session metadata
+  useEffect(() => {
+    if (selectedReciter && selectedSurah) {
+      player.setMediaMetadata({
+        title: selectedSurah.name.en,
+        artist: selectedReciter.name.en,
+        album: "Al Bayani — Quran",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSurahId, selectedReciter]);
 
   const formatTime = (seconds: number) => {
     if (!isFinite(seconds) || seconds <= 0) return "0:00";
@@ -277,6 +305,51 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
               <Button variant="ghost" size="icon" onClick={handleNextSurah} disabled={!selectedSurahId || selectedSurahId >= 114}>
                 <SkipForward className="w-5 h-5" />
               </Button>
+            </div>
+
+            {/* Speed / Repeat / Autoplay row */}
+            <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+              <div className="flex items-center gap-1 bg-muted/60 rounded-full p-1">
+                <Gauge className="w-3.5 h-3.5 text-muted-foreground ml-1.5" />
+                {SPEEDS.map((sp) => (
+                  <button
+                    key={sp}
+                    onClick={() => player.setPlaybackRate(sp)}
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
+                      player.playbackRate === sp
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    aria-label={`${sp}x speed`}
+                  >
+                    {sp}×
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => player.setRepeat(!player.repeat)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+                  player.repeat
+                    ? "bg-accent/20 text-accent border border-accent/40"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Toggle repeat"
+              >
+                <Repeat className="w-3.5 h-3.5" />
+                {isAr ? "تكرار" : "Repeat"}
+              </button>
+              <button
+                onClick={() => setAutoplayNext(!autoplayNext)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+                  autoplayNext
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Toggle autoplay next surah"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+                {isAr ? "التالي تلقائياً" : "Auto-next"}
+              </button>
             </div>
             {player.error && <p className="text-xs text-destructive">{player.error}</p>}
           </div>

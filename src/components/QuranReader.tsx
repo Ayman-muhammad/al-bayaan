@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Palette, Volume2, Pause } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 interface Ayah {
   number: number;
@@ -26,6 +27,7 @@ type DisplayMode = "full" | "arabic-only";
 const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
   const isAr = language === "ar";
+  const player = useAudioPlayer();
 
   const [screen, setScreen] = useState<Screen>("list");
   const [selectedSurahId, setSelectedSurahId] = useState<number | null>(null);
@@ -39,6 +41,41 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("full");
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [tajweedOn, setTajweedOn] = useState(false);
+  const [activeAyah, setActiveAyah] = useState<number | null>(null);
+
+  // Per-ayah audio (Mishary Alafasy via everyayah CDN)
+  const buildAyahAudioUrl = (surahId: number, ayahNumberInSurah: number) => {
+    const s = String(surahId).padStart(3, "0");
+    const a = String(ayahNumberInSurah).padStart(3, "0");
+    return `https://everyayah.com/data/Alafasy_128kbps/${s}${a}.mp3`;
+  };
+
+  const playAyah = (surahId: number, ayahNumberInSurah: number, globalNumber: number) => {
+    const url = buildAyahAudioUrl(surahId, ayahNumberInSurah);
+    setActiveAyah(globalNumber);
+    player.toggle(url);
+  };
+
+  // Lightweight tajweed colorization: colors specific letters/marks using existing tokens.
+  // This is a visual hint, not a full tajweed engine — clearly indicates ghunna, qalqalah, madd, idgham letters.
+  const renderTajweed = (text: string) => {
+    const QALQALAH = ["ق", "ط", "ب", "ج", "د"];
+    const GHUNNA = ["ن", "م"];
+    const MADD = ["آ", "ٰ", "ـٰ", "وْ", "يْ"];
+    return Array.from(text).map((ch, i) => {
+      let cls = "";
+      if (ch === "ّ" || ch === "ـ") cls = "";
+      else if (QALQALAH.includes(ch)) cls = "text-tajweed-qalqalah";
+      else if (GHUNNA.includes(ch)) cls = "text-tajweed-ghunna";
+      else if (MADD.some((m) => ch === m || ch.includes(m))) cls = "text-tajweed-madd";
+      return cls ? (
+        <span key={i} className={cls}>{ch}</span>
+      ) : (
+        <span key={i}>{ch}</span>
+      );
+    });
+  };
 
   const selectedSurah = SURAHS.find((s) => s.id === selectedSurahId);
 
@@ -198,6 +235,14 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
         <div className="ml-auto flex items-center gap-1">
           {screen === "read" && (
             <>
+              <Button
+                variant={tajweedOn ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setTajweedOn(!tajweedOn)}
+                title={isAr ? "تلوين التجويد" : "Tajweed colors"}
+              >
+                <Palette className={`w-4 h-4 ${tajweedOn ? "text-accent" : ""}`} />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -364,18 +409,40 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                   <span className="text-xs text-muted-foreground">{isAr ? "جاري تحميل التفسير..." : "Loading tafsir..."}</span>
                 </div>
               )}
-              {ayahs.map((ayah) => (
-                <div key={ayah.number} className="bg-card border border-border rounded-xl p-3 sm:p-4 space-y-3 hover:border-primary/30 transition-colors">
+              {ayahs.map((ayah) => {
+                const isActive = activeAyah === ayah.number;
+                const isPlayingThis = isActive && player.isPlaying;
+                return (
+                <div
+                  key={ayah.number}
+                  className={`bg-card border rounded-xl p-3 sm:p-4 space-y-3 transition-all duration-300 ${
+                    isActive
+                      ? "border-accent shadow-[0_0_0_2px_hsl(var(--accent)/0.25),0_8px_30px_-10px_hsl(var(--accent)/0.4)] bg-accent/5"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                >
                   <div className="flex items-start gap-2 sm:gap-3">
-                    <span className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                      {ayah.numberInSurah}
-                    </span>
-                    <p className="text-right font-arabic text-lg sm:text-xl leading-[2.2] text-foreground flex-1 break-words" dir="rtl">
-                      {ayah.text}
+                    <button
+                      onClick={() => selectedSurahId && playAyah(selectedSurahId, ayah.numberInSurah, ayah.number)}
+                      className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-primary/10 text-primary hover:bg-primary/20"
+                      }`}
+                      aria-label={isPlayingThis ? "Pause ayah" : "Play ayah"}
+                    >
+                      {isPlayingThis ? <Pause className="w-3.5 h-3.5" /> : isActive ? <Volume2 className="w-3.5 h-3.5 animate-pulse" /> : ayah.numberInSurah}
+                    </button>
+                    <p
+                      className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
+                      dir="rtl"
+                      style={{ wordSpacing: "0.05em" }}
+                    >
+                      {tajweedOn ? renderTajweed(ayah.text) : ayah.text}
                     </p>
                   </div>
                   {displayMode === "full" && ayah.translation && (
-                    <p className="text-sm text-muted-foreground leading-relaxed sm:pl-11 border-t border-border/50 pt-3">
+                    <p className="text-sm text-muted-foreground leading-[1.7] sm:pl-11 border-t border-border/50 pt-3">
                       {ayah.translation}
                     </p>
                   )}
@@ -384,13 +451,22 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       <p className="text-xs font-medium text-accent mb-1">
                         {tafsirMode === "ibn-kathir" ? (isAr ? "تفسير ابن كثير" : "Tafsir Ibn Kathir") : (isAr ? "تفسير الجلالين" : "Tafsir Al-Jalalayn")}
                       </p>
-                      <p className={`text-sm leading-relaxed text-foreground/80 ${tafsirMode === "jalalayn" ? "font-arabic text-right" : ""}`} dir={tafsirMode === "jalalayn" ? "rtl" : "ltr"}>
+                      <p className={`text-sm leading-[1.8] text-foreground/80 ${tafsirMode === "jalalayn" ? "font-arabic text-right" : ""}`} dir={tafsirMode === "jalalayn" ? "rtl" : "ltr"}>
                         {ayah[currentTafsirKey]}
                       </p>
                     </div>
                   )}
                 </div>
-              ))}
+              );})}
+
+              {/* Tajweed legend */}
+              {tajweedOn && (
+                <div className="bg-muted/40 rounded-xl p-3 text-xs flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-qalqalah" /> {isAr ? "قلقلة" : "Qalqalah"}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-ghunna" /> {isAr ? "غنة" : "Ghunna"}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-madd" /> {isAr ? "مد" : "Madd"}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
