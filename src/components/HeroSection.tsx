@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Quote, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import DailyVerse from "@/components/DailyVerse";
@@ -22,7 +21,6 @@ const HERO_SLIDES = [
 
 const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   const { language, t } = useLanguage();
-  const { user } = useAuth();
   const isAr = language === "ar";
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -71,6 +69,16 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
           />
         ))}
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+        {/* Soft Islamic geometric pattern wash */}
+        <div className="absolute inset-0 islamic-pattern opacity-40 pointer-events-none" />
+        {/* Radial gold glow behind title */}
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] max-w-[640px] aspect-square rounded-full pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, hsl(var(--accent) / 0.18) 0%, hsl(var(--accent) / 0.05) 40%, transparent 70%)",
+          }}
+        />
 
         {/* Floating particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -155,9 +163,27 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
         </div>
       </section>
 
+      {/* Arabesque divider */}
+      <div className="relative h-10 sm:h-12 -mt-px flex items-center justify-center pointer-events-none">
+        <svg
+          viewBox="0 0 600 24"
+          className="w-full max-w-md h-6 text-accent/50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1"
+          aria-hidden
+        >
+          <line x1="0" y1="12" x2="240" y2="12" strokeDasharray="2 4" />
+          <path d="M240 12 Q270 0 300 12 Q330 24 360 12" />
+          <circle cx="300" cy="12" r="2.5" fill="currentColor" />
+          <line x1="360" y1="12" x2="600" y2="12" strokeDasharray="2 4" />
+        </svg>
+      </div>
+
       {/* Quick Links */}
-      <section className="py-6 sm:py-8 px-3 sm:px-4 bg-card/50">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative py-6 sm:py-8 px-3 sm:px-4 bg-card/50">
+        <div className="absolute inset-0 islamic-pattern opacity-30 pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 text-center">
             {quickLinks.map((item, i) => (
               <button
