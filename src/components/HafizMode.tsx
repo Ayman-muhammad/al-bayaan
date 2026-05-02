@@ -80,6 +80,7 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
 
   // Speech recognition
   const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false);
 
   const selectedSurah = SURAHS.find((s) => s.id === selectedSurahId);
 
@@ -591,18 +592,56 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                 </div>
               </div>
 
-              {/* Ayah Display */}
-              <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 text-center space-y-3">
+              {/* Ayah Display — Tarteel-style word tracking */}
+              <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-3">
                 {showAyah ? (
-                  <p className="font-arabic text-lg sm:text-xl leading-[2.2] text-foreground break-words" dir="rtl">
-                    {ayahs[currentAyahIndex].text}
-                  </p>
+                  <div
+                    className="font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex flex-wrap gap-x-2 gap-y-1 justify-center"
+                    dir="rtl"
+                  >
+                    {(() => {
+                      // Render the ORIGINAL Uthmani text split by spaces so user sees diacritics,
+                      // but color each word by its tracked state.
+                      const rawWords = ayahs[currentAyahIndex].text.split(/\s+/).filter(Boolean);
+                      return rawWords.map((w, idx) => {
+                        const state = wordStates[idx] ?? 0;
+                        const isCursor = isListening && idx === cursor;
+                        const cls =
+                          state === 1
+                            ? "text-primary"
+                            : state === 2
+                            ? "text-destructive underline decoration-dotted underline-offset-4"
+                            : isCursor
+                            ? "text-accent bg-accent/10 rounded px-1 ring-2 ring-accent/40 animate-pulse"
+                            : "text-foreground/90";
+                        return (
+                          <span key={idx} className={`transition-colors duration-200 ${cls}`}>
+                            {w}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
                 ) : (
                   <div className="py-8 space-y-2">
                     <EyeOff className="w-12 h-12 text-muted-foreground mx-auto" />
                     <p className={`text-sm text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
                       {isAr ? "حاول التلاوة من الذاكرة" : "Try to recite from memory"}
                     </p>
+                  </div>
+                )}
+                {/* Live word progress */}
+                {showAyah && ayahWordsRef.current.length > 0 && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-primary" />
+                      {wordStates.filter((s) => s === 1).length}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-destructive" />
+                      {wordStates.filter((s) => s === 2).length}
+                    </span>
+                    <span>/ {ayahWordsRef.current.length} {isAr ? "كلمة" : "words"}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-center gap-2">
@@ -635,42 +674,47 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                 </div>
               )}
 
-              {/* Controls */}
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 sm:h-14 sm:w-14 shrink-0"
-                  onClick={() => { setTranscript(""); setAccuracy(null); setShowResult(null); }}
-                  aria-label="Reset"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </Button>
+              {/* Controls — single mic. Auto-finalizes when ayah complete. */}
+              <div className="flex flex-col items-center gap-2">
                 <button
                   onClick={isListening ? stopListening : startListening}
                   aria-label={isListening ? "Stop" : "Record"}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg shrink-0 ${
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
                     isListening
                       ? "bg-destructive animate-pulse"
                       : "bg-primary hover:bg-primary/90"
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
+                    <MicOff className="w-8 h-8 sm:w-9 sm:h-9 text-primary-foreground" />
                   ) : (
-                    <Mic className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
+                    <Mic className="w-8 h-8 sm:w-9 sm:h-9 text-primary-foreground" />
                   )}
                 </button>
-                <Button
-                  variant="hero"
-                  size="icon"
-                  className="h-12 w-12 sm:h-14 sm:w-14 shrink-0"
-                  onClick={checkRecitation}
-                  disabled={!transcript}
-                  aria-label="Check"
-                >
-                  <CheckCircle2 className="w-5 h-5" />
-                </Button>
+                <p className={`text-xs text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
+                  {isListening
+                    ? (isAr ? "تلاوتك تُتبَّع مباشرة..." : "Tracking your recitation live...")
+                    : (isAr ? "اضغط واقرأ — سنُلوِّن كلَّ كلمة" : "Tap & recite — we'll color each word")}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setTranscript("");
+                      wordStatesRef.current = new Array(ayahWordsRef.current.length).fill(0);
+                      setWordStates(wordStatesRef.current.slice());
+                      cursorRef.current = 0;
+                      setCursor(0);
+                      seenTokensRef.current = new Set();
+                      setAccuracy(null);
+                      setShowResult(null);
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    {isAr ? "إعادة" : "Reset"}
+                  </Button>
+                </div>
               </div>
 
               {/* Memorize mode: after target reps, hide and test */}
