@@ -275,14 +275,6 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           {screen === "read" && (
             <>
               <Button
-                variant={tajweedOn ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setTajweedOn(!tajweedOn)}
-                title={isAr ? "تلوين التجويد" : "Tajweed colors"}
-              >
-                <Palette className={`w-4 h-4 ${tajweedOn ? "text-accent" : ""}`} />
-              </Button>
-              <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setDisplayMode(displayMode === "full" ? "arabic-only" : "full")}
@@ -477,7 +469,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       dir="rtl"
                       style={{ wordSpacing: "0.05em" }}
                     >
-                      {tajweedOn ? renderTajweed(ayah.text) : ayah.text}
+                      {renderTajweed(ayah.text)}
                     </p>
                   </div>
                   {displayMode === "full" && ayah.translation && (
@@ -498,14 +490,12 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                 </div>
               );})}
 
-              {/* Tajweed legend */}
-              {tajweedOn && (
-                <div className="bg-muted/40 rounded-xl p-3 text-xs flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-qalqalah" /> {isAr ? "قلقلة" : "Qalqalah"}</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-ghunna" /> {isAr ? "غنة" : "Ghunna"}</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-madd" /> {isAr ? "مد" : "Madd"}</span>
-                </div>
-              )}
+              {/* Tajweed legend (always on) */}
+              <div className="bg-muted/40 rounded-xl p-3 text-xs flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-qalqalah" /> {isAr ? "قلقلة" : "Qalqalah"}</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-ghunna" /> {isAr ? "غنة" : "Ghunna"}</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-tajweed-madd" /> {isAr ? "مد" : "Madd"}</span>
+              </div>
             </div>
           )}
         </div>
