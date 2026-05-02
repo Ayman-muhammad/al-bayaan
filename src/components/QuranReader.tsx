@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Palette, Volume2, Pause } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
@@ -41,7 +41,6 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("full");
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [tajweedOn, setTajweedOn] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
 
   // Per-ayah audio (Mishary Alafasy via everyayah CDN)
@@ -57,22 +56,62 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     player.toggle(url);
   };
 
-  // Lightweight tajweed colorization: colors specific letters/marks using existing tokens.
-  // This is a visual hint, not a full tajweed engine — clearly indicates ghunna, qalqalah, madd, idgham letters.
+  // Word-level tajweed colorization. Splits on whitespace only so Arabic
+  // letter shaping inside each word is preserved (no isolated forms).
+  // Detects rules contextually via regex; applies a subtle colored
+  // text-shadow + underline so the base glyph still renders normally.
   const renderTajweed = (text: string) => {
-    const QALQALAH = ["ق", "ط", "ب", "ج", "د"];
-    const GHUNNA = ["ن", "م"];
-    const MADD = ["آ", "ٰ", "ـٰ", "وْ", "يْ"];
-    return Array.from(text).map((ch, i) => {
-      let cls = "";
-      if (ch === "ّ" || ch === "ـ") cls = "";
-      else if (QALQALAH.includes(ch)) cls = "text-tajweed-qalqalah";
-      else if (GHUNNA.includes(ch)) cls = "text-tajweed-ghunna";
-      else if (MADD.some((m) => ch === m || ch.includes(m))) cls = "text-tajweed-madd";
-      return cls ? (
-        <span key={i} className={cls}>{ch}</span>
-      ) : (
-        <span key={i}>{ch}</span>
+    // Diacritics
+    const SUKUN = "\u0652";        // ْ
+    const SHADDA = "\u0651";       // ّ
+    const FATHA = "\u064E";
+    const KASRA = "\u0650";
+    const DAMMA = "\u064F";
+    const FATHATAN = "\u064B";
+    const KASRATAN = "\u064D";
+    const DAMMATAN = "\u064C";
+    const DAGGER_ALIF = "\u0670"; // ٰ
+    const MADDA_ABOVE = "\u0653"; // ٓ
+
+    // Letters
+    const QALQALAH = "[\u0642\u0637\u0628\u062C\u062F]"; // ق ط ب ج د
+    const NUN = "\u0646";
+    const MEEM = "\u0645";
+    const ALIF = "\u0627";
+    const WAW = "\u0648";
+    const YA = "\u064A";
+    const ALEF_MADDA = "\u0622"; // آ
+
+    // Detection regexes (test against the whole word)
+    // Ghunna: shadda on ن or م
+    const reGhunna = new RegExp(`[${NUN}${MEEM}]${SHADDA}`);
+    // Qalqalah: any qalqalah letter carrying sukun (or end of word with sukun-like state)
+    const reQalqalah = new RegExp(`${QALQALAH}${SUKUN}`);
+    // Madd: alif madda, dagger alif, madda mark, or madd letters following matching short vowel
+    const reMadd = new RegExp(
+      `${ALEF_MADDA}|${DAGGER_ALIF}|${MADDA_ABOVE}|${FATHA}${ALIF}|${KASRA}${YA}|${DAMMA}${WAW}`
+    );
+
+    // Split keeping whitespace tokens so we don't lose spacing.
+    const tokens = text.split(/(\s+)/);
+    return tokens.map((tok, i) => {
+      if (!tok || /^\s+$/.test(tok)) return <span key={i}>{tok}</span>;
+
+      const classes: string[] = [];
+      // Priority: madd > ghunna > qalqalah (visually, madd dominates if all present)
+      const hasMadd = reMadd.test(tok);
+      const hasGhunna = reGhunna.test(tok);
+      const hasQalqalah = reQalqalah.test(tok);
+
+      if (hasMadd) classes.push("tajweed-madd");
+      if (hasGhunna) classes.push("tajweed-ghunna");
+      if (hasQalqalah) classes.push("tajweed-qalqalah");
+
+      if (classes.length === 0) return <span key={i}>{tok}</span>;
+      return (
+        <span key={i} className={classes.join(" ")}>
+          {tok}
+        </span>
       );
     });
   };
