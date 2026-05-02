@@ -167,6 +167,33 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Tajweed word-level highlighting.
+     Uses background tint + bottom border so Arabic letter shaping is not
+     broken (no per-glyph spans). Multiple rules can stack on one word. */
+  .tajweed-madd {
+    color: hsl(var(--tajweed-madd));
+    text-shadow: 0 0 0.5px hsl(var(--tajweed-madd) / 0.4);
+  }
+  .tajweed-ghunna {
+    color: hsl(var(--tajweed-ghunna));
+    text-shadow: 0 0 0.5px hsl(var(--tajweed-ghunna) / 0.4);
+  }
+  .tajweed-qalqalah {
+    color: hsl(var(--tajweed-qalqalah));
+    text-shadow: 0 0 0.5px hsl(var(--tajweed-qalqalah) / 0.4);
+  }
+  /* When stacked, prefer the most prominent rule (madd > ghunna > qalqalah)
+     and indicate the others with a subtle underline accent. */
+  .tajweed-madd.tajweed-ghunna,
+  .tajweed-madd.tajweed-qalqalah {
+    color: hsl(var(--tajweed-madd));
+    border-bottom: 1px dashed hsl(var(--tajweed-ghunna) / 0.5);
+  }
+  .tajweed-ghunna.tajweed-qalqalah:not(.tajweed-madd) {
+    color: hsl(var(--tajweed-ghunna));
+    border-bottom: 1px dashed hsl(var(--tajweed-qalqalah) / 0.5);
+  }
 }
 
 @layer utilities {
