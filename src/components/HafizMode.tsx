@@ -61,6 +61,15 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
   const [showResult, setShowResult] = useState<"success" | "retry" | null>(null);
   const [mode, setMode] = useState<"listen-repeat" | "memorize">("listen-repeat");
 
+  // Tarteel-style live tracking
+  // Per-word state: 0 = pending, 1 = correct, 2 = mistake (skipped/mispronounced)
+  const [wordStates, setWordStates] = useState<number[]>([]);
+  const [cursor, setCursor] = useState(0); // index of next expected word
+  const cursorRef = useRef(0);
+  const wordStatesRef = useRef<number[]>([]);
+  const ayahWordsRef = useRef<string[]>([]);
+  const seenTokensRef = useRef<Set<string>>(new Set());
+
   // Dashboard
   const [dashboardData, setDashboardData] = useState<any[]>([]);
   const [totalMastered, setTotalMastered] = useState(0);
@@ -127,16 +136,163 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
     fetchSurah(surahId);
   };
 
-  // Simple text similarity (Jaccard-like on words)
-  const calculateSimilarity = (a: string, b: string): number => {
-    const normalize = (s: string) =>
-      s.replace(/[\u064B-\u065F\u0670]/g, "").replace(/[^\u0621-\u064A\s]/g, "").trim().split(/\s+/);
-    const wordsA = new Set(normalize(a));
-    const wordsB = new Set(normalize(b));
-    if (wordsA.size === 0 || wordsB.size === 0) return 0;
-    let intersection = 0;
-    wordsA.forEach((w) => { if (wordsB.has(w)) intersection++; });
-    return (intersection / Math.max(wordsA.size, wordsB.size)) * 100;
+  // Aggressive Arabic normalization for STT vs Uthmani comparison.
+  // Strips diacritics, unifies alif/hamza/ya/ta-marbuta variants, removes
+  // tatweel and non-letter chars. This is what makes matching tolerant.
+  const normalizeArabic = (s: string): string => {
+    return s
+      .replace(/[\u064B-\u065F\u0670\u0610-\u061A\u06D6-\u06ED]/g, "") // diacritics, tanwin, dagger alif, quranic marks
+      .replace(/\u0640/g, "")                       // tatweel
+      .replace(/[\u0622\u0623\u0625\u0671]/g, "\u0627") // آ أ إ ٱ → ا
+      .replace(/\u0649/g, "\u064A")                  // ى → ي
+      .replace(/\u0629/g, "\u0647")                  // ة → ه
+      .replace(/\u0624/g, "\u0648")                  // ؤ → و
+      .replace(/\u0626/g, "\u064A")                  // ئ → ي
+      .replace(/[^\u0621-\u064A\s]/g, "")            // strip punctuation/numbers
+      .trim()
+      .toLowerCase();
+  };
+
+  const tokenize = (s: string): string[] =>
+    normalizeArabic(s).split(/\s+/).filter(Boolean);
+
+  // Levenshtein distance for fuzzy single-word match (handles 1-2 char STT errors)
+  const lev = (a: string, b: string): number => {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    if (!m) return n; if (!n) return m;
+    const dp = new Array(n + 1);
+    for (let j = 0; j <= n; j++) dp[j] = j;
+    for (let i = 1; i <= m; i++) {
+      let prev = dp[0]; dp[0] = i;
+      for (let j = 1; j <= n; j++) {
+        const tmp = dp[j];
+        dp[j] = a[i - 1] === b[j - 1]
+          ? prev
+          : 1 + Math.min(prev, dp[j], dp[j - 1]);
+        prev = tmp;
+      }
+    }
+    return dp[n];
+  };
+
+  // Fuzzy word equality: identical, prefix match, or small edit distance.
+  const wordMatches = (heard: string, expected: string): boolean => {
+    if (!heard || !expected) return false;
+    if (heard === expected) return true;
+    // Allow prefix/suffix match for short stems (STT often clips endings)
+    if (expected.length >= 4 && heard.length >= 3) {
+      if (expected.startsWith(heard) || heard.startsWith(expected)) return true;
+    }
+    const maxLen = Math.max(heard.length, expected.length);
+    const tolerance = maxLen <= 4 ? 1 : maxLen <= 7 ? 2 : 3;
+    return lev(heard, expected) <= tolerance;
+  };
+
+  // Reset live tracking when ayah changes
+  useEffect(() => {
+    if (!ayahs[currentAyahIndex]) return;
+    const words = tokenize(ayahs[currentAyahIndex].text);
+    ayahWordsRef.current = words;
+    wordStatesRef.current = new Array(words.length).fill(0);
+    setWordStates(wordStatesRef.current.slice());
+    cursorRef.current = 0;
+    setCursor(0);
+    seenTokensRef.current = new Set();
+    setTranscript("");
+    setAccuracy(null);
+    setShowResult(null);
+  }, [currentAyahIndex, ayahs]);
+
+  // Process newly-heard words against the expected sequence (Tarteel-style).
+  const processHeardTokens = (heardTokens: string[]) => {
+    const words = ayahWordsRef.current;
+    if (!words.length) return;
+
+    // De-dupe: only process tokens we haven't seen before (interim results
+    // re-emit accumulated transcripts, so we track which we've consumed).
+    let advanced = false;
+    let mistake = false;
+
+    for (let t = 0; t < heardTokens.length; t++) {
+      const tok = heardTokens[t];
+      const key = `${t}:${tok}`;
+      if (seenTokensRef.current.has(key)) continue;
+      seenTokensRef.current.add(key);
+
+      let i = cursorRef.current;
+      if (i >= words.length) break;
+
+      // 1) exact next word?
+      if (wordMatches(tok, words[i])) {
+        wordStatesRef.current[i] = 1;
+        cursorRef.current = i + 1;
+        advanced = true;
+        continue;
+      }
+      // 2) look ahead up to 2 words (skipped a word)
+      let found = -1;
+      for (let k = 1; k <= 2 && i + k < words.length; k++) {
+        if (wordMatches(tok, words[i + k])) { found = i + k; break; }
+      }
+      if (found !== -1) {
+        // mark skipped words as mistake
+        for (let s = i; s < found; s++) wordStatesRef.current[s] = 2;
+        wordStatesRef.current[found] = 1;
+        cursorRef.current = found + 1;
+        advanced = true;
+        mistake = true;
+      } else {
+        // unmatched token — leave cursor; mark current expected as mistake hint
+        // (only the first unmatched stroke per cursor position)
+        if (wordStatesRef.current[i] === 0) {
+          wordStatesRef.current[i] = 2;
+          mistake = true;
+        }
+      }
+    }
+
+    if (advanced || mistake) {
+      setWordStates(wordStatesRef.current.slice());
+      setCursor(cursorRef.current);
+    }
+    if (mistake && "vibrate" in navigator) {
+      try { navigator.vibrate?.(40); } catch {}
+    }
+
+    // Auto-complete: all words matched
+    if (cursorRef.current >= words.length) {
+      const correct = wordStatesRef.current.filter((s) => s === 1).length;
+      const acc = Math.round((correct / words.length) * 100);
+      finalizeAttempt(acc);
+    }
+  };
+
+  const finalizeAttempt = (acc: number) => {
+    setAccuracy(acc);
+    if (acc >= 70) {
+      setShowResult("success");
+      setRepetitions((r) => {
+        const next = r + 1;
+        if (user && selectedSurahId && ayahs[currentAyahIndex]) {
+          supabase.from("memorization_progress").upsert({
+            user_id: user.id,
+            surah_id: selectedSurahId,
+            ayah_from: ayahs[currentAyahIndex].numberInSurah,
+            ayah_to: ayahs[currentAyahIndex].numberInSurah,
+            repetitions: next,
+            accuracy_score: acc,
+            mastered: next >= targetReps,
+            last_practiced: new Date().toISOString(),
+          }, { onConflict: "user_id,surah_id,ayah_from,ayah_to" }).then(() => {});
+        }
+        return next;
+      });
+    } else {
+      setShowResult("retry");
+    }
+    // stop recognition cleanly
+    try { recognitionRef.current?.stop(); } catch {}
   };
 
   const startListening = () => {
@@ -150,59 +306,78 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
     recognition.lang = "ar-SA";
     recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 3;
 
     recognition.onresult = (event: any) => {
-      let finalTranscript = "";
+      // Build the cumulative transcript from all results (interim + final)
+      let combined = "";
       for (let i = 0; i < event.results.length; i++) {
-        finalTranscript += event.results[i][0].transcript;
+        // Pick the alternative that yields the most matched words
+        const alts = event.results[i];
+        let bestAlt = alts[0].transcript;
+        if (alts.length > 1) {
+          const expected = ayahWordsRef.current.slice(cursorRef.current, cursorRef.current + 6);
+          let bestScore = -1;
+          for (let a = 0; a < alts.length; a++) {
+            const toks = tokenize(alts[a].transcript);
+            let score = 0;
+            for (const t of toks) for (const e of expected) if (wordMatches(t, e)) { score++; break; }
+            if (score > bestScore) { bestScore = score; bestAlt = alts[a].transcript; }
+          }
+        }
+        combined += " " + bestAlt;
       }
-      setTranscript(finalTranscript);
+      setTranscript(combined.trim());
+      processHeardTokens(tokenize(combined));
     };
 
-    recognition.onerror = () => {
-      setIsListening(false);
+    recognition.onerror = (e: any) => {
+      // Auto-restart on transient no-speech errors while user still wants to listen
+      if (e?.error === "no-speech" || e?.error === "audio-capture") {
+        try { recognition.stop(); } catch {}
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognition.onend = () => {
+      // Restart automatically while user is still in listening mode
+      // (speech recognition stops every ~60s on most browsers)
+      if (cursorRef.current < ayahWordsRef.current.length && isListeningRef.current) {
+        try { recognition.start(); return; } catch {}
+      }
       setIsListening(false);
+      isListeningRef.current = false;
     };
 
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
+    isListeningRef.current = true;
     setTranscript("");
+    // reset live tracking
+    wordStatesRef.current = new Array(ayahWordsRef.current.length).fill(0);
+    setWordStates(wordStatesRef.current.slice());
+    cursorRef.current = 0;
+    setCursor(0);
+    seenTokensRef.current = new Set();
+    setAccuracy(null);
+    setShowResult(null);
   };
 
   const stopListening = () => {
-    recognitionRef.current?.stop();
+    isListeningRef.current = false;
+    try { recognitionRef.current?.stop(); } catch {}
     setIsListening(false);
-  };
-
-  const checkRecitation = () => {
-    if (!ayahs[currentAyahIndex]) return;
-    const sim = calculateSimilarity(transcript, ayahs[currentAyahIndex].text);
-    setAccuracy(Math.round(sim));
-
-    if (sim >= 70) {
-      setShowResult("success");
-      setRepetitions((r) => r + 1);
-      // Save progress
-      if (user && selectedSurahId) {
-        supabase.from("memorization_progress").upsert({
-          user_id: user.id,
-          surah_id: selectedSurahId,
-          ayah_from: ayahs[currentAyahIndex].numberInSurah,
-          ayah_to: ayahs[currentAyahIndex].numberInSurah,
-          repetitions: repetitions + 1,
-          accuracy_score: sim,
-          mastered: repetitions + 1 >= targetReps,
-          last_practiced: new Date().toISOString(),
-        }, { onConflict: "user_id,surah_id,ayah_from,ayah_to" }).then(() => {});
-      }
-    } else {
-      setShowResult("retry");
+    // Finalize whatever we have
+    const words = ayahWordsRef.current;
+    if (words.length) {
+      const correct = wordStatesRef.current.filter((s) => s === 1).length;
+      const acc = Math.round((correct / words.length) * 100);
+      if (correct > 0 || transcript) finalizeAttempt(acc);
     }
   };
+
 
   const nextAyah = () => {
     if (currentAyahIndex < ayahs.length - 1) {
