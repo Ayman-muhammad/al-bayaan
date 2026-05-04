@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
@@ -23,6 +23,7 @@ interface QuranReaderProps {
 type Screen = "list" | "read" | "search";
 type TafsirMode = "none" | "ibn-kathir" | "jalalayn";
 type DisplayMode = "full" | "arabic-only";
+type TranslationMode = "full" | "word";
 
 const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
@@ -42,6 +43,53 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
+  const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
+  const [tadabburOpen, setTadabburOpen] = useState<Record<number, boolean>>({});
+  const [wordsByAyah, setWordsByAyah] = useState<Record<number, { ar: string; en: string }[]>>({});
+  const [loadingWords, setLoadingWords] = useState(false);
+
+  const fetchWordByWord = useCallback(async (id: number) => {
+    setLoadingWords(true);
+    try {
+      const res = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${id}?words=true&word_translation_language=en&per_page=300&fields=text_uthmani`);
+      if (res.ok) {
+        const data = await res.json();
+        const map: Record<number, { ar: string; en: string }[]> = {};
+        (data.verses || []).forEach((v: any) => {
+          map[v.verse_number] = (v.words || [])
+            .filter((w: any) => w.char_type_name === "word")
+            .map((w: any) => ({ ar: w.text_uthmani || w.text || "", en: w.translation?.text || "" }));
+        });
+        setWordsByAyah(map);
+      }
+    } catch (e) {
+      console.error("Word-by-word fetch failed:", e);
+    } finally {
+      setLoadingWords(false);
+    }
+  }, []);
+
+  const handleTranslationModeChange = (mode: TranslationMode) => {
+    setTranslationMode(mode);
+    if (mode === "word" && selectedSurahId && Object.keys(wordsByAyah).length === 0) {
+      fetchWordByWord(selectedSurahId);
+    }
+  };
+
+  // Generate simple, universal tadabbur reflection prompts
+  const tadabburQuestions = (ayahNumberInSurah: number, translation: string): string[] => {
+    const en = (translation || "").toLowerCase();
+    const out: string[] = [];
+    out.push("What is Allah teaching you in this verse?");
+    if (/\b(forgive|mercy|merciful|rahm)/.test(en)) out.push("How does Allah's mercy show up in your life right now?");
+    if (/\b(believe|faith|imaan|trust)/.test(en)) out.push("Where can your faith and trust in Allah grow stronger?");
+    if (/\b(patient|patience|sabr|hardship|trial)/.test(en)) out.push("Which trial are you currently being asked to be patient with?");
+    if (/\b(pray|prayer|salah|worship|remember)/.test(en)) out.push("How can you bring this verse into your next prayer?");
+    if (/\b(thank|grateful|bounty|favor)/.test(en)) out.push("What blessing have you been overlooking that this verse points to?");
+    if (/\b(fear|warning|punish|hellfire|wrath)/.test(en)) out.push("What habit is this verse calling you to leave behind?");
+    out.push("Write one action you will take today because of ayah " + ayahNumberInSurah + ".");
+    return out.slice(0, 4);
+  };
 
   // Per-ayah audio (Mishary Alafasy via everyayah CDN)
   const buildAyahAudioUrl = (surahId: number, ayahNumberInSurah: number) => {
@@ -211,6 +259,9 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setSelectedSurahId(id);
     setScreen("read");
     setTafsirMode("none");
+    setTranslationMode("full");
+    setWordsByAyah({});
+    setTadabburOpen({});
     fetchSurah(id);
   };
 
