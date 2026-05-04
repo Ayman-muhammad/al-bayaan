@@ -20,6 +20,7 @@ import {
   Headphones,
   MessageCircle,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -48,6 +49,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const secondaryLinks = [
     { id: "audio", icon: Headphones, labelAr: "الاستماع", labelEn: "Listen" },
     { id: "chat", icon: MessageCircle, labelAr: "اسأل", labelEn: "Ask AI" },
+    { id: "scholars", icon: Users, labelAr: "علماء", labelEn: "Scholars" },
     { id: "dhikr", icon: Sparkles, labelAr: "الأذكار والأدعية", labelEn: "Dhikr & Dua" },
     { id: "journey", icon: TrendingUp, labelAr: "رحلتي", labelEn: "My Journey" },
     { id: "favorites", icon: Bookmark, labelAr: "المفضلة", labelEn: "Favorites" },
