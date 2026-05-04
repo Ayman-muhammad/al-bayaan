@@ -7,6 +7,16 @@ import LiveStreamSection from "@/components/LiveStreamSection";
 import kaabaImg from "@/assets/kaaba-hero.jpg";
 import medinaImg from "@/assets/medina-mosque.jpg";
 import quranImg from "@/assets/quran-open.jpg";
+import iconQuran from "@/assets/icons/icon-quran.png";
+import iconHafiz from "@/assets/icons/icon-hafiz.png";
+import iconAudio from "@/assets/icons/icon-audio.png";
+import iconPrayer from "@/assets/icons/icon-prayer.png";
+import iconJourney from "@/assets/icons/icon-journey.png";
+import iconFavorites from "@/assets/icons/icon-favorites.png";
+import iconChat from "@/assets/icons/icon-chat.png";
+import iconMadhab from "@/assets/icons/icon-madhab.png";
+import iconScholars from "@/assets/icons/icon-scholars.png";
+import iconDhikr from "@/assets/icons/icon-dhikr.png";
 
 interface HeroSectionProps {
   onStartChat: () => void;
@@ -38,14 +48,16 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   ];
 
   const quickLinks = [
-    { emoji: "📖", label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
-    { emoji: "📚", label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
-    { emoji: "🎧", label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
-    { emoji: "🕌", label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
-    { emoji: "📈", label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تتبع تقدمك" : "Track your progress", action: () => onNavigate("journey") },
-    { emoji: "⭐", label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
-    { emoji: "💬", label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
-    { emoji: "⚖️", label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
+    { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
+    { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
+    { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
+    { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
+    { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
+    { img: iconDhikr, label: isAr ? "الأذكار والأدعية" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
+    { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تتبع تقدمك" : "Track your progress", action: () => onNavigate("journey") },
+    { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
+    { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
+    { img: iconMadhab, label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
   ];
 
   const slide = HERO_SLIDES[currentSlide];
@@ -189,10 +201,12 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <button
                 key={i}
                 onClick={item.action}
-                className="p-3 sm:p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up"
+                className="p-3 sm:p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up flex flex-col items-center"
                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
               >
-                <span className="text-2xl group-hover:scale-125 inline-block transition-transform duration-300">{item.emoji}</span>
+                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/5 to-accent/10 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                  <img src={item.img} alt="" width={64} height={64} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm" loading="lazy" />
+                </div>
                 <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
                 <p className={`text-[10px] text-muted-foreground mt-1 line-clamp-2 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
               </button>

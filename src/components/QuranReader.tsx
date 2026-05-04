@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
@@ -23,6 +23,7 @@ interface QuranReaderProps {
 type Screen = "list" | "read" | "search";
 type TafsirMode = "none" | "ibn-kathir" | "jalalayn";
 type DisplayMode = "full" | "arabic-only";
+type TranslationMode = "full" | "word";
 
 const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
@@ -42,6 +43,53 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
+  const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
+  const [tadabburOpen, setTadabburOpen] = useState<Record<number, boolean>>({});
+  const [wordsByAyah, setWordsByAyah] = useState<Record<number, { ar: string; en: string }[]>>({});
+  const [loadingWords, setLoadingWords] = useState(false);
+
+  const fetchWordByWord = useCallback(async (id: number) => {
+    setLoadingWords(true);
+    try {
+      const res = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${id}?words=true&word_translation_language=en&per_page=300&fields=text_uthmani`);
+      if (res.ok) {
+        const data = await res.json();
+        const map: Record<number, { ar: string; en: string }[]> = {};
+        (data.verses || []).forEach((v: any) => {
+          map[v.verse_number] = (v.words || [])
+            .filter((w: any) => w.char_type_name === "word")
+            .map((w: any) => ({ ar: w.text_uthmani || w.text || "", en: w.translation?.text || "" }));
+        });
+        setWordsByAyah(map);
+      }
+    } catch (e) {
+      console.error("Word-by-word fetch failed:", e);
+    } finally {
+      setLoadingWords(false);
+    }
+  }, []);
+
+  const handleTranslationModeChange = (mode: TranslationMode) => {
+    setTranslationMode(mode);
+    if (mode === "word" && selectedSurahId && Object.keys(wordsByAyah).length === 0) {
+      fetchWordByWord(selectedSurahId);
+    }
+  };
+
+  // Generate simple, universal tadabbur reflection prompts
+  const tadabburQuestions = (ayahNumberInSurah: number, translation: string): string[] => {
+    const en = (translation || "").toLowerCase();
+    const out: string[] = [];
+    out.push("What is Allah teaching you in this verse?");
+    if (/\b(forgive|mercy|merciful|rahm)/.test(en)) out.push("How does Allah's mercy show up in your life right now?");
+    if (/\b(believe|faith|imaan|trust)/.test(en)) out.push("Where can your faith and trust in Allah grow stronger?");
+    if (/\b(patient|patience|sabr|hardship|trial)/.test(en)) out.push("Which trial are you currently being asked to be patient with?");
+    if (/\b(pray|prayer|salah|worship|remember)/.test(en)) out.push("How can you bring this verse into your next prayer?");
+    if (/\b(thank|grateful|bounty|favor)/.test(en)) out.push("What blessing have you been overlooking that this verse points to?");
+    if (/\b(fear|warning|punish|hellfire|wrath)/.test(en)) out.push("What habit is this verse calling you to leave behind?");
+    out.push("Write one action you will take today because of ayah " + ayahNumberInSurah + ".");
+    return out.slice(0, 4);
+  };
 
   // Per-ayah audio (Mishary Alafasy via everyayah CDN)
   const buildAyahAudioUrl = (surahId: number, ayahNumberInSurah: number) => {
@@ -211,6 +259,9 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setSelectedSurahId(id);
     setScreen("read");
     setTafsirMode("none");
+    setTranslationMode("full");
+    setWordsByAyah({});
+    setTadabburOpen({});
     fetchSurah(id);
   };
 
@@ -422,6 +473,32 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
             ))}
           </div>
 
+          {/* Translation mode toggle */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/30">
+            <Languages className="w-4 h-4 text-accent shrink-0" />
+            <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
+              {isAr ? "الترجمة:" : "Translation:"}
+            </span>
+            {(["full", "word"] as TranslationMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => handleTranslationModeChange(mode)}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap ${
+                  translationMode === mode
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {mode === "full" ? (isAr ? "كاملة" : "Full") : (isAr ? "كلمة بكلمة" : "Word-by-word")}
+              </button>
+            ))}
+            {translationMode === "word" && loadingWords && (
+              <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> {isAr ? "جاري التحميل" : "Loading"}
+              </span>
+            )}
+          </div>
+
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -443,13 +520,15 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               {ayahs.map((ayah) => {
                 const isActive = activeAyah === ayah.number;
                 const isPlayingThis = isActive && player.isPlaying;
+                const wbw = wordsByAyah[ayah.numberInSurah];
+                const showTadabbur = !!tadabburOpen[ayah.numberInSurah];
                 return (
                 <div
                   key={ayah.number}
-                  className={`bg-card border rounded-xl p-3 sm:p-4 space-y-3 transition-all duration-300 ${
+                  className={`quran-page rounded-xl p-4 sm:p-6 space-y-3 transition-all duration-300 ${
                     isActive
-                      ? "border-accent shadow-[0_0_0_2px_hsl(var(--accent)/0.25),0_8px_30px_-10px_hsl(var(--accent)/0.4)] bg-accent/5"
-                      : "border-border hover:border-primary/30"
+                      ? "ring-2 ring-accent/40 shadow-[0_8px_30px_-10px_hsl(var(--accent)/0.4)]"
+                      : ""
                   }`}
                 >
                   <div className="flex items-start gap-2 sm:gap-3">
@@ -464,15 +543,31 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                     >
                       {isPlayingThis ? <Pause className="w-3.5 h-3.5" /> : isActive ? <Volume2 className="w-3.5 h-3.5 animate-pulse" /> : ayah.numberInSurah}
                     </button>
-                    <p
-                      className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
-                      dir="rtl"
-                      style={{ wordSpacing: "0.05em" }}
-                    >
-                      {renderTajweed(ayah.text)}
-                    </p>
+                    {translationMode === "word" && wbw ? (
+                      <div className="flex-1" dir="rtl">
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          {wbw.map((w, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex flex-col items-center px-2 py-1 rounded-lg hover:bg-accent/10 transition-colors group"
+                            >
+                              <span className="font-arabic text-xl sm:text-2xl leading-[1.6] text-foreground">{w.ar}</span>
+                              <span className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-accent">{w.en}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p
+                        className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
+                        dir="rtl"
+                        style={{ wordSpacing: "0.05em" }}
+                      >
+                        {renderTajweed(ayah.text)}
+                      </p>
+                    )}
                   </div>
-                  {displayMode === "full" && ayah.translation && (
+                  {displayMode === "full" && translationMode === "full" && ayah.translation && (
                     <p className="text-sm text-muted-foreground leading-[1.7] sm:pl-11 border-t border-border/50 pt-3">
                       {ayah.translation}
                     </p>
@@ -485,6 +580,28 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       <p className={`text-sm leading-[1.8] text-foreground/80 ${tafsirMode === "jalalayn" ? "font-arabic text-right" : ""}`} dir={tafsirMode === "jalalayn" ? "rtl" : "ltr"}>
                         {ayah[currentTafsirKey]}
                       </p>
+                    </div>
+                  )}
+                  {/* Tadabbur */}
+                  {displayMode === "full" && (
+                    <div className="sm:pl-11 border-t border-border/50 pt-3">
+                      <button
+                        onClick={() => setTadabburOpen((prev) => ({ ...prev, [ayah.numberInSurah]: !prev[ayah.numberInSurah] }))}
+                        className="inline-flex items-center gap-2 text-xs font-medium text-accent hover:text-primary transition-colors"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        {isAr ? "تدبّر" : "Tadabbur"}
+                        <ChevronRight className={`w-3 h-3 transition-transform ${showTadabbur ? "rotate-90" : ""}`} />
+                      </button>
+                      {showTadabbur && (
+                        <ul className="mt-2 space-y-1.5 animate-fade-in">
+                          {tadabburQuestions(ayah.numberInSurah, ayah.translation || "").map((q, i) => (
+                            <li key={i} className="text-sm text-foreground/85 leading-relaxed pl-4 relative before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-accent">
+                              {q}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )}
                 </div>
