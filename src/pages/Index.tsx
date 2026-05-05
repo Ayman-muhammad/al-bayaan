@@ -11,9 +11,13 @@ import MyJourney from "@/components/MyJourney";
 import DhikrPage from "@/components/DhikrPage";
 import ScholarsQA from "@/components/ScholarsQA";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
+import Dashboard from "@/components/Dashboard";
+import InstallPrompt from "@/components/InstallPrompt";
+import ReminderNudge from "@/components/ReminderNudge";
+import AuthPage from "@/pages/Auth";
 import { useFeedback } from "@/components/FeedbackToast";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -73,6 +77,7 @@ const Index = () => {
           <div className="pt-14">
             <HeroSection onStartChat={() => handleNavigate("chat")} onNavigate={handleNavigate} />
           </div>
+          <ReminderNudge onAct={() => handleNavigate("hafiz")} />
         </>
       )}
 
@@ -85,6 +90,10 @@ const Index = () => {
       {currentView === "scholars" && <ScholarsQA onBack={() => setCurrentView("home")} />}
       {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+      {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+      {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
+
+      <InstallPrompt />
     </div>
   );
 };

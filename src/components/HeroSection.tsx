@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Headphones, Quote, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Headphones, Quote, GraduationCap, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
 import DailyVerse from "@/components/DailyVerse";
 import LiveStreamSection from "@/components/LiveStreamSection";
 import kaabaImg from "@/assets/kaaba-hero.jpg";
@@ -48,13 +48,13 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
   ];
 
   const quickLinks = [
+    { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
     { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
     { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
     { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
     { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
     { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
     { img: iconDhikr, label: isAr ? "الأذكار والأدعية" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
-    { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تتبع تقدمك" : "Track your progress", action: () => onNavigate("journey") },
     { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
     { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
     { img: iconMadhab, label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
