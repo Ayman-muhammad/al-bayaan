@@ -4,7 +4,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound } from "lucide-react";
 
 interface AuthPageProps {
   onBack: () => void;
@@ -17,9 +17,13 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const isAr = language === "ar";
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -56,10 +60,13 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           },
         });
         if (error) throw error;
+        // Auto-confirm enabled — try immediate sign-in
+        await supabase.auth.signInWithPassword({ email, password });
         toast({
-          title: isAr ? "تم التسجيل" : "Account Created",
-          description: isAr ? "تحقق من بريدك الإلكتروني لتأكيد الحساب" : "Check your email to confirm your account",
+          title: isAr ? "أهلاً بك" : "Welcome!",
+          description: isAr ? "تم إنشاء حسابك بنجاح" : "Account created successfully",
         });
+        onSuccess();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -70,6 +77,35 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone) return;
+    setLoading(true);
+    try {
+      const formatted = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
+      const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
+      if (error) throw error;
+      setOtpSent(true);
+      toast({ title: isAr ? "تم الإرسال" : "Code Sent", description: isAr ? "أدخل الرمز المرسل" : "Enter the code we sent" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally { setLoading(false); }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) return;
+    setLoading(true);
+    try {
+      const formatted = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
+      const { error } = await supabase.auth.verifyOtp({ phone: formatted, token: otp, type: "sms" });
+      if (error) throw error;
+      onSuccess();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
   return (
@@ -119,7 +155,25 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
             </div>
           </div>
 
-          {/* Email Form */}
+          {/* Tabs */}
+          <div className="flex gap-1 p-1 bg-muted rounded-lg">
+            <button
+              type="button"
+              onClick={() => setTab("email")}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              <Mail className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "البريد" : "Email"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("phone")}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "phone" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              <Phone className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "الهاتف" : "Phone"}
+            </button>
+          </div>
+
+          {tab === "email" && (
           <form onSubmit={handleEmailAuth} className="space-y-4">
             {mode === "signup" && (
               <div className="relative">
@@ -164,6 +218,49 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               )}
             </Button>
           </form>
+          )}
+
+          {tab === "phone" && (
+            <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 555 123 4567"
+                  required
+                  disabled={otpSent}
+                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                />
+              </div>
+              {otpSent && (
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder={isAr ? "رمز التحقق" : "6-digit code"}
+                    required
+                    maxLength={6}
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
+                  />
+                </div>
+              )}
+              <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+                {loading
+                  ? <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  : otpSent ? (isAr ? "تأكيد" : "Verify") : (isAr ? "إرسال الرمز" : "Send Code")}
+              </Button>
+              {otpSent && (
+                <button type="button" onClick={() => { setOtpSent(false); setOtp(""); }} className="text-xs text-muted-foreground hover:text-foreground w-full text-center">
+                  {isAr ? "تغيير الرقم" : "Change number"}
+                </button>
+              )}
+            </form>
+          )}
 
           <p className="text-center text-sm text-muted-foreground">
             {mode === "signin" ? t("noAccount") : t("haveAccount")}{" "}
