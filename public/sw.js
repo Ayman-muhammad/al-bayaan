@@ -1,4 +1,4 @@
-const CACHE_NAME = "al-bayan-v1";
+const CACHE_NAME = "al-bayan-v2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -29,7 +29,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   // Never cache OAuth or auth routes
-  if (url.pathname.startsWith("/~oauth") || url.pathname.startsWith("/auth")) {
+  if (
+    url.pathname.startsWith("/~oauth") ||
+    url.pathname.startsWith("/auth") ||
+    url.hostname.includes("supabase.co")
+  ) {
     return;
   }
 
