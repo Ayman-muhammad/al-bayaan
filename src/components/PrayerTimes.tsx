@@ -1,7 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Compass, Loader2, RefreshCw, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Loader2, RefreshCw, Navigation, Bell, BellOff, Settings, Volume2, VolumeX, X, Download } from "lucide-react";
+import {
+  MUEZZINS, DUA_AFTER_ADHAN, ADHAN_REPLY,
+  loadAdhanSettings, saveAdhanSettings, preCacheAdhan,
+  type AdhanSettings, type PrayerKey, type Muezzin,
+} from "@/lib/adhan";
+import { useToast } from "@/hooks/use-toast";
 
 interface PrayerTimesProps {
   onBack: () => void;
@@ -17,6 +23,7 @@ interface PrayerTime {
 const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
   const { language } = useLanguage();
   const isAr = language === "ar";
+  const { toast } = useToast();
 
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [cityName, setCityName] = useState("");
@@ -26,6 +33,91 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
   const [qiblaDirection, setQiblaDirection] = useState<number | null>(null);
   const [deviceHeading, setDeviceHeading] = useState<number | null>(null);
   const [nextPrayer, setNextPrayer] = useState<string>("");
+  const [settings, setSettings] = useState<AdhanSettings>(loadAdhanSettings);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeAdhan, setActiveAdhan] = useState<PrayerKey | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const firedToday = useRef<Set<string>>(new Set());
+
+  const muezzin: Muezzin =
+    MUEZZINS.find((m) => m.id === settings.muezzinId) || MUEZZINS[0];
+
+  const updateSettings = (next: AdhanSettings) => {
+    setSettings(next);
+    saveAdhanSettings(next);
+  };
+
+  // Pre-cache selected muezzin for offline
+  useEffect(() => {
+    preCacheAdhan(muezzin);
+  }, [muezzin]);
+
+  const playAdhan = useCallback(
+    (prayer: PrayerKey) => {
+      const url = prayer === "Fajr" && muezzin.fajrUrl ? muezzin.fajrUrl : muezzin.url;
+      if (!audioRef.current) audioRef.current = new Audio();
+      audioRef.current.src = url;
+      audioRef.current.play().catch(() => {
+        toast({
+          title: isAr ? "اضغط للسماح بصوت الأذان" : "Tap to allow adhan sound",
+          description: isAr ? "المتصفح يمنع التشغيل التلقائي" : "Browser blocked autoplay",
+        });
+      });
+      setActiveAdhan(prayer);
+      // Vibrate
+      if ("vibrate" in navigator) navigator.vibrate([300, 150, 300, 150, 600]);
+      // Notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification(isAr ? `حان وقت ${prayer}` : `It's time for ${prayer}`, {
+            body: isAr ? "حيّ على الصلاة" : "Hayya 'ala-s-Salah",
+            icon: "/icons/icon-192.png",
+            tag: `adhan-${prayer}`,
+          });
+        } catch {/* */}
+      }
+    },
+    [muezzin, isAr, toast],
+  );
+
+  const stopAdhan = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  // Schedule check every 20s
+  useEffect(() => {
+    if (!settings.enabled || prayers.length === 0) return;
+    const tick = () => {
+      const now = new Date();
+      const todayKey = now.toDateString();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      for (const p of prayers) {
+        if (p.name === "Sunrise") continue;
+        const key = p.name as PrayerKey;
+        const cfg = settings.perPrayer[key];
+        if (!cfg?.enabled) continue;
+        const [h, m] = p.time.split(":").map(Number);
+        const target = h * 60 + m + (cfg.offsetMin || 0);
+        const fireKey = `${todayKey}-${key}`;
+        if (minutes === target && !firedToday.current.has(fireKey)) {
+          firedToday.current.add(fireKey);
+          playAdhan(key);
+        }
+      }
+    };
+    tick();
+    const id = setInterval(tick, 20000);
+    return () => clearInterval(id);
+  }, [settings, prayers, playAdhan]);
+
+  const requestNotifPermission = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+  };
 
   const calculateQibla = (lat: number, lng: number) => {
     const kaabaLat = 21.4225;
@@ -132,6 +224,20 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
         <h1 className={`font-semibold text-foreground ${isAr ? "font-arabic" : ""}`}>
           {isAr ? "مواقيت الصلاة" : "Prayer Times"}
         </h1>
+        <div className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => updateSettings({ ...settings, enabled: !settings.enabled })}
+            title={settings.enabled ? "Adhan on" : "Adhan off"}
+            aria-label="Toggle adhan"
+          >
+            {settings.enabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => { setShowSettings(true); requestNotifPermission(); }} aria-label="Adhan settings">
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
@@ -154,6 +260,24 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
             <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
               <span>{cityName || `${location?.lat.toFixed(2)}, ${location?.lng.toFixed(2)}`}</span>
+            </div>
+
+            {/* Adhan banner */}
+            <div className={`rounded-xl border p-3 flex items-center gap-3 text-xs ${settings.enabled ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"}`}>
+              {settings.enabled ? <Volume2 className="w-4 h-4 text-primary shrink-0" /> : <VolumeX className="w-4 h-4 text-muted-foreground shrink-0" />}
+              <div className="flex-1">
+                <p className={`font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
+                  {settings.enabled
+                    ? (isAr ? `الأذان: ${muezzin.nameAr}` : `Adhan: ${muezzin.nameEn}`)
+                    : (isAr ? "الأذان متوقف" : "Adhan muted")}
+                </p>
+                <p className="text-muted-foreground text-[11px]">
+                  {isAr ? "يعمل دون اتصال • قابل للتعديل" : "Works offline • Customizable"}
+                </p>
+              </div>
+              <button onClick={() => playAdhan("Dhuhr")} className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-medium hover:bg-primary/20">
+                {isAr ? "اختبر" : "Test"}
+              </button>
             </div>
 
             {/* Prayer Times Cards */}
@@ -180,7 +304,12 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
                       )}
                     </div>
                   </div>
-                  <span className="text-lg font-semibold text-foreground tabular-nums">{p.time}</span>
+                  <div className="flex items-center gap-2">
+                    {p.name !== "Sunrise" && settings.perPrayer[p.name as PrayerKey] && !settings.perPrayer[p.name as PrayerKey].enabled && (
+                      <BellOff className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
+                    <span className="text-lg font-semibold text-foreground tabular-nums">{p.time}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -223,6 +352,160 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
           </>
         )}
       </div>
+
+      {/* Active Adhan overlay with post-adhan dua */}
+      {activeAdhan && (
+        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-md w-full bg-card border border-accent/40 rounded-2xl p-6 space-y-5 shadow-2xl">
+            <button
+              onClick={() => { stopAdhan(); setActiveAdhan(null); }}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-lg animate-pulse">
+                <Volume2 className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <h2 className={`text-xl font-bold text-foreground ${isAr ? "font-arabic" : ""}`}>
+                {isAr ? `حان وقت ${activeAdhan === "Fajr" ? "الفجر" : activeAdhan === "Dhuhr" ? "الظهر" : activeAdhan === "Asr" ? "العصر" : activeAdhan === "Maghrib" ? "المغرب" : "العشاء"}` : `It's time for ${activeAdhan}`}
+              </h2>
+              <p className="text-xs text-muted-foreground">{isAr ? muezzin.nameAr : muezzin.nameEn}</p>
+            </div>
+
+            <div className="bg-muted/30 rounded-xl p-4 space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-accent font-semibold">
+                {isAr ? "الدعاء بعد الأذان" : "Du'a after the Adhan"}
+              </p>
+              <p className="font-arabic text-base text-foreground leading-loose text-right" dir="rtl">
+                {DUA_AFTER_ADHAN.ar}
+              </p>
+              <p className="text-xs italic text-muted-foreground">{DUA_AFTER_ADHAN.translit}</p>
+              <p className="text-xs text-foreground/80 leading-relaxed">{DUA_AFTER_ADHAN.en}</p>
+              <p className="text-[10px] text-accent">{DUA_AFTER_ADHAN.reference}</p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => { stopAdhan(); }}>
+                <VolumeX className="w-4 h-4 mr-2" /> {isAr ? "إيقاف" : "Stop"}
+              </Button>
+              <Button variant="hero" className="flex-1" onClick={() => { stopAdhan(); setActiveAdhan(null); }}>
+                {isAr ? "تم" : "Done"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in" onClick={() => setShowSettings(false)}>
+          <div className="relative w-full sm:max-w-lg max-h-[90vh] overflow-y-auto bg-card border border-border rounded-t-2xl sm:rounded-2xl p-5 space-y-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className={`text-lg font-bold text-foreground ${isAr ? "font-arabic" : ""}`}>
+                {isAr ? "إعدادات الأذان" : "Adhan Settings"}
+              </h3>
+              <button onClick={() => setShowSettings(false)} className="p-1.5 rounded-lg hover:bg-muted">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Master toggle */}
+            <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/40">
+              <div>
+                <p className={`text-sm font-medium ${isAr ? "font-arabic" : ""}`}>{isAr ? "تفعيل الأذان" : "Enable Adhan"}</p>
+                <p className="text-xs text-muted-foreground">{isAr ? "تشغيل الأذان عند دخول وقت الصلاة" : "Ring at each prayer time"}</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.enabled}
+                onChange={(e) => updateSettings({ ...settings, enabled: e.target.checked })}
+                className="w-5 h-5 accent-primary"
+              />
+            </label>
+
+            {/* Muezzin */}
+            <div className="space-y-2">
+              <p className={`text-xs uppercase tracking-wider font-semibold text-accent ${isAr ? "font-arabic" : ""}`}>
+                {isAr ? "صوت المؤذن" : "Muezzin"}
+              </p>
+              <div className="grid gap-2">
+                {MUEZZINS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => updateSettings({ ...settings, muezzinId: m.id })}
+                    className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
+                      settings.muezzinId === m.id
+                        ? "border-primary/50 bg-primary/10"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{m.nameEn}</p>
+                      <p className="font-arabic text-xs text-muted-foreground">{m.nameAr}</p>
+                    </div>
+                    {settings.muezzinId === m.id && <Download className="w-4 h-4 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Per-prayer */}
+            <div className="space-y-2">
+              <p className={`text-xs uppercase tracking-wider font-semibold text-accent ${isAr ? "font-arabic" : ""}`}>
+                {isAr ? "الصلوات والتعديل" : "Prayers & Adjust"}
+              </p>
+              {(["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as PrayerKey[]).map((pk) => {
+                const cfg = settings.perPrayer[pk];
+                return (
+                  <div key={pk} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                    <input
+                      type="checkbox"
+                      checked={cfg.enabled}
+                      onChange={(e) =>
+                        updateSettings({
+                          ...settings,
+                          perPrayer: { ...settings.perPrayer, [pk]: { ...cfg, enabled: e.target.checked } },
+                        })
+                      }
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="text-sm font-medium text-foreground flex-1">{pk}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() =>
+                          updateSettings({
+                            ...settings,
+                            perPrayer: { ...settings.perPrayer, [pk]: { ...cfg, offsetMin: cfg.offsetMin - 1 } },
+                          })
+                        }
+                        className="w-7 h-7 rounded-lg bg-card border border-border text-sm"
+                      >−</button>
+                      <span className="w-12 text-center text-xs tabular-nums text-foreground">
+                        {cfg.offsetMin > 0 ? `+${cfg.offsetMin}` : cfg.offsetMin} min
+                      </span>
+                      <button
+                        onClick={() =>
+                          updateSettings({
+                            ...settings,
+                            perPrayer: { ...settings.perPrayer, [pk]: { ...cfg, offsetMin: cfg.offsetMin + 1 } },
+                          })
+                        }
+                        className="w-7 h-7 rounded-lg bg-card border border-border text-sm"
+                      >+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              {isAr ? "يتم تخزين الأذان للعمل دون اتصال" : "Adhan is cached for offline use"}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

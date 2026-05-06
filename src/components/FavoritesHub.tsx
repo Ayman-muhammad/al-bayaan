@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Bookmark, BookOpen, MessageSquare, Headphones,
   Search, Tag, Trash2, Heart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { listBookmarks, removeBookmark, type Bookmark as BM } from "@/lib/bookmarks";
 
 interface FavoritesHubProps {
   onBack: () => void;
@@ -16,16 +16,6 @@ interface FavoritesHubProps {
 
 type Tab = "ayahs" | "chat" | "audio";
 
-const LS_BOOKMARKS_KEY = "al-bayan-local-bookmarks";
-
-const getLocalBookmarks = (): any[] => {
-  try { return JSON.parse(localStorage.getItem(LS_BOOKMARKS_KEY) || "[]"); } catch { return []; }
-};
-
-const saveLocalBookmarks = (bookmarks: any[]) => {
-  localStorage.setItem(LS_BOOKMARKS_KEY, JSON.stringify(bookmarks));
-};
-
 const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -33,34 +23,20 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const isAr = language === "ar";
 
   const [tab, setTab] = useState<Tab>("ayahs");
-  const [bookmarks, setBookmarks] = useState<any[]>([]);
+  const [bookmarks, setBookmarks] = useState<BM[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchBookmarks = useCallback(async () => {
     setLoading(true);
-    if (user) {
-      const { data } = await supabase
-        .from("bookmarks")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (data) setBookmarks(data);
-    } else {
-      setBookmarks(getLocalBookmarks());
-    }
+    setBookmarks(await listBookmarks(user?.id));
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchBookmarks(); }, [fetchBookmarks]);
 
   const deleteBookmark = async (id: string) => {
-    if (user) {
-      await supabase.from("bookmarks").delete().eq("id", id);
-    } else {
-      const updated = getLocalBookmarks().filter((b) => b.id !== id);
-      saveLocalBookmarks(updated);
-    }
+    await removeBookmark(user?.id, id);
     setBookmarks((prev) => prev.filter((b) => b.id !== id));
     toast({ title: isAr ? "تم الحذف" : "Removed", duration: 2000 });
   };

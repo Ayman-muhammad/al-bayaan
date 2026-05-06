@@ -3,6 +3,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Search, ChevronRight, BookOpen, Globe2 } from "lucide-react";
 import scholarsIcon from "@/assets/icons/icon-scholars.png";
+import { EXTRA_SCHOLARS, type Scholar as ExtraScholar } from "@/data/scholarsQA";
 
 interface ScholarsQAProps {
   onBack: () => void;
@@ -180,6 +181,9 @@ const SCHOLARS: Scholar[] = [
   },
 ];
 
+// Merge in expanded library (100+ Q&A from famous books and scholars)
+const ALL_SCHOLARS: Scholar[] = [...SCHOLARS, ...(EXTRA_SCHOLARS as Scholar[])];
+
 const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
   const { language } = useLanguage();
   const isAr = language === "ar";
@@ -189,13 +193,17 @@ const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
   const [filter, setFilter] = useState("");
 
   const filteredScholars = useMemo(() => {
-    if (!filter.trim()) return SCHOLARS;
+    if (!filter.trim()) return ALL_SCHOLARS;
     const q = filter.toLowerCase();
-    return SCHOLARS.filter(
+    return ALL_SCHOLARS.filter(
       (s) =>
         s.nameEn.toLowerCase().includes(q) ||
         s.nameAr.includes(filter) ||
-        s.qas.some((qa) => qa.topic.includes(q)),
+        s.qas.some((qa) =>
+          qa.topic.includes(q) ||
+          qa.question.en.toLowerCase().includes(q) ||
+          qa.answer.en.toLowerCase().includes(q),
+        ),
     );
   }, [filter]);
 

@@ -5,10 +5,13 @@ import { Slider } from "@/components/ui/slider";
 import {
   ArrowLeft, Play, Pause, User, Search, ChevronRight,
   SkipForward, SkipBack, Volume2, MapPin, X, BookOpen, ChevronDown, ChevronUp,
-  Repeat, Gauge
+  Repeat, Gauge, Heart
 } from "lucide-react";
 import { SURAHS, RECITERS, getSurahAudioUrl, type Reciter } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { addBookmark, removeBookmark, listBookmarks, isAudioBookmarked, type Bookmark as BM } from "@/lib/bookmarks";
 
 interface AudioLibraryProps {
   onBack: () => void;
@@ -27,6 +30,29 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
   const { t, language } = useLanguage();
   const isAr = language === "ar";
   const player = useAudioPlayer();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [bookmarks, setBookmarks] = useState<BM[]>([]);
+  useEffect(() => { listBookmarks(user?.id).then(setBookmarks); }, [user]);
+
+  const toggleAudioFav = async () => {
+    if (!selectedReciter || !selectedSurah || !selectedSurahId) return;
+    const existing = isAudioBookmarked(bookmarks, selectedSurahId, selectedReciter.id);
+    if (existing) {
+      await removeBookmark(user?.id, existing.id);
+      setBookmarks((b) => b.filter((x) => x.id !== existing.id));
+      toast({ title: isAr ? "تمت الإزالة" : "Removed", duration: 1500 });
+    } else {
+      const created = await addBookmark(user?.id, "audio", {
+        surahId: selectedSurahId,
+        surahName: selectedSurah.name.en,
+        reciterName: selectedReciter.name.en,
+        reciterId: selectedReciter.id,
+      });
+      setBookmarks((b) => [created, ...b]);
+      toast({ title: isAr ? "تمت الإضافة للمفضلة" : "Added to favorites", duration: 1500 });
+    }
+  };
 
   const [screen, setScreen] = useState<Screen>("reciters");
   const [selectedReciter, setSelectedReciter] = useState<Reciter | null>(null);
@@ -305,6 +331,14 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
               <Button variant="ghost" size="icon" onClick={handleNextSurah} disabled={!selectedSurahId || selectedSurahId >= 114}>
                 <SkipForward className="w-5 h-5" />
               </Button>
+              {(() => {
+                const fav = selectedSurahId && selectedReciter ? isAudioBookmarked(bookmarks, selectedSurahId, selectedReciter.id) : undefined;
+                return (
+                  <Button variant="ghost" size="icon" onClick={toggleAudioFav} aria-label="Favorite">
+                    <Heart className={`w-5 h-5 ${fav ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`} />
+                  </Button>
+                );
+              })()}
             </div>
 
             {/* Speed / Repeat / Autoplay row */}
