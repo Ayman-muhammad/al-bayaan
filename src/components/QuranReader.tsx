@@ -1,9 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { useAuth } from "@/contexts/AuthContext";
+import { addBookmark, removeBookmark, listBookmarks, isAyahBookmarked, type Bookmark as BM } from "@/lib/bookmarks";
+import { useToast } from "@/hooks/use-toast";
 
 interface Ayah {
   number: number;
@@ -29,6 +32,33 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const player = useAudioPlayer();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [bookmarks, setBookmarks] = useState<BM[]>([]);
+
+  useEffect(() => {
+    listBookmarks(user?.id).then(setBookmarks);
+  }, [user]);
+
+  const toggleAyahFavorite = async (ayah: Ayah, surahName: string) => {
+    if (!selectedSurahId) return;
+    const existing = isAyahBookmarked(bookmarks, selectedSurahId, ayah.numberInSurah);
+    if (existing) {
+      await removeBookmark(user?.id, existing.id);
+      setBookmarks((b) => b.filter((x) => x.id !== existing.id));
+      toast({ title: isAr ? "تمت الإزالة" : "Removed from favorites", duration: 1500 });
+    } else {
+      const created = await addBookmark(user?.id, "ayahs", {
+        arabic: ayah.text,
+        translation: ayah.translation,
+        reference: `${surahName} ${selectedSurahId}:${ayah.numberInSurah}`,
+        surahId: selectedSurahId,
+        ayahNumber: ayah.numberInSurah,
+      });
+      setBookmarks((b) => [created, ...b]);
+      toast({ title: isAr ? "تمت الإضافة للمفضلة" : "Added to favorites", duration: 1500 });
+    }
+  };
 
   const [screen, setScreen] = useState<Screen>("list");
   const [selectedSurahId, setSelectedSurahId] = useState<number | null>(null);
