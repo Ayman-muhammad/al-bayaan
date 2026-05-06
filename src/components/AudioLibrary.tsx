@@ -331,6 +331,14 @@ const AudioLibrary = ({ onBack }: AudioLibraryProps) => {
               <Button variant="ghost" size="icon" onClick={handleNextSurah} disabled={!selectedSurahId || selectedSurahId >= 114}>
                 <SkipForward className="w-5 h-5" />
               </Button>
+              {(() => {
+                const fav = selectedSurahId && selectedReciter ? isAudioBookmarked(bookmarks, selectedSurahId, selectedReciter.id) : undefined;
+                return (
+                  <Button variant="ghost" size="icon" onClick={toggleAudioFav} aria-label="Favorite">
+                    <Heart className={`w-5 h-5 ${fav ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`} />
+                  </Button>
+                );
+              })()}
             </div>
 
             {/* Speed / Repeat / Autoplay row */}
