@@ -1,4 +1,5 @@
-const CACHE_NAME = "al-bayan-v2";
+const CACHE_NAME = "al-bayan-v3";
+const ADHAN_CACHE = "al-bayan-adhan-v1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -17,7 +18,11 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME && k !== ADHAN_CACHE)
+          .map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
@@ -42,7 +47,8 @@ self.addEventListener("fetch", (event) => {
     url.hostname.includes("api.alquran.cloud") ||
     url.hostname.includes("cdn.islamic.network") ||
     url.hostname.includes("api.aladhan.com") ||
-    url.hostname.includes("cdn.jsdelivr.net")
+    url.hostname.includes("cdn.jsdelivr.net") ||
+    url.hostname.includes("api.quran.com")
   ) {
     event.respondWith(
       fetch(request)
@@ -52,6 +58,28 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Adhan audio + reciter mp3s: cache-first for offline playback
+  if (
+    url.pathname.match(/\.(mp3|ogg|wav|m4a)$/i) ||
+    url.hostname.includes("server8.mp3quran.net") ||
+    url.hostname.includes("everyayah.com")
+  ) {
+    event.respondWith(
+      caches.open(ADHAN_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        try {
+          const res = await fetch(request);
+          if (res.ok && res.status === 200) cache.put(request, res.clone());
+          return res;
+        } catch {
+          return cached || new Response("", { status: 504 });
+        }
+      })
     );
     return;
   }

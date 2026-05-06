@@ -9,7 +9,8 @@ type BIPEvent = Event & {
 };
 
 const DISMISS_KEY = "al-bayani-install-dismissed-at";
-const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
+const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 2; // 2 days
+const FIRST_SEEN_KEY = "al-bayani-first-seen";
 
 const isStandalone = () =>
   window.matchMedia?.("(display-mode: standalone)").matches ||
@@ -32,19 +33,27 @@ const InstallPrompt = () => {
     const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
     if (Date.now() - dismissedAt < DISMISS_COOLDOWN_MS) return;
 
+    // First-visit fast prompt (works for browsers that already fired BIP before our listener ran)
+    const firstSeen = localStorage.getItem(FIRST_SEEN_KEY);
+    if (!firstSeen) {
+      localStorage.setItem(FIRST_SEEN_KEY, String(Date.now()));
+      // Open prompt sooner on first visit
+      setTimeout(() => setShow(true), 800);
+    }
+
     const onBip = (e: Event) => {
       e.preventDefault();
       setBip(e as BIPEvent);
-      setTimeout(() => setShow(true), 1500);
+      setTimeout(() => setShow(true), 600);
     };
     window.addEventListener("beforeinstallprompt", onBip);
 
-    // iOS Safari has no beforeinstallprompt — show manual hint after a delay
+    // iOS Safari has no beforeinstallprompt — show manual hint quickly
     if (isIOS()) {
       const t = setTimeout(() => {
         setIosHint(true);
         setShow(true);
-      }, 4000);
+      }, 1500);
       return () => {
         clearTimeout(t);
         window.removeEventListener("beforeinstallprompt", onBip);
