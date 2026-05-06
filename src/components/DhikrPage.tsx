@@ -699,86 +699,109 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
 
       {/* === TASBIH === */}
       {screen === "tasbih" && activePreset && (
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center gap-6 sm:gap-8 scrollbar-thin">
-          <div className="text-center space-y-2 w-full max-w-sm">
-            <p className="font-arabic text-2xl sm:text-3xl text-foreground break-words" dir="rtl">
-              {activePreset.phraseAr}
-            </p>
-            <p className="text-sm text-muted-foreground italic">
-              {activePreset.translitEn}
-            </p>
-            <p className={`text-xs text-muted-foreground px-2 ${isAr ? "font-arabic" : ""}`}>
-              {isAr ? activePreset.labelAr : activePreset.meaningEn}
-            </p>
+        <div className="flex-1 overflow-hidden relative bg-gradient-to-b from-background via-primary/5 to-accent/10">
+          {/* Decorative glow */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-primary/15 blur-3xl animate-pulse" />
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-accent/10 blur-3xl" />
           </div>
 
-          {/* Progress ring + tap area */}
-          <button
-            onClick={increment}
-            aria-label="Count"
-            className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-full flex items-center justify-center active:scale-95 transition-transform touch-none select-none"
-          >
-            <svg
-              className="absolute inset-0 w-full h-full -rotate-90"
-              viewBox="0 0 120 120"
-              aria-hidden="true"
-            >
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                fill="none"
-                stroke="hsl(var(--muted))"
-                strokeWidth="6"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 54}`}
-                strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPct / 100)}`}
-                className="transition-[stroke-dashoffset] duration-300"
-              />
-            </svg>
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <span className="text-5xl sm:text-6xl font-bold text-foreground tabular-nums">
-                {count}
-              </span>
-              <span className="text-xs text-muted-foreground mt-1">
-                / {activePreset.target}
-              </span>
+          <div className="relative h-full flex flex-col items-center justify-between py-6 px-4 overflow-y-auto scrollbar-thin">
+            <div className="text-center space-y-1.5 w-full max-w-sm">
+              <p className="font-arabic text-3xl sm:text-4xl text-foreground leading-snug break-words" dir="rtl">
+                {activePreset.phraseAr}
+              </p>
+              <p className="text-xs text-accent/90 font-medium tracking-wide uppercase">
+                {activePreset.translitEn}
+              </p>
+              <p className={`text-xs text-muted-foreground px-4 ${isAr ? "font-arabic" : ""}`}>
+                {isAr ? activePreset.labelAr : activePreset.meaningEn}
+              </p>
             </div>
-          </button>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={resetCount}
-              className="gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              {isAr ? "إعادة" : "Reset"}
-            </Button>
-            <Button
-              variant="hero"
-              size="lg"
+            {/* Premium dial */}
+            <button
               onClick={increment}
-              className="min-w-[140px]"
+              aria-label="Count"
+              className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full flex items-center justify-center active:scale-[0.97] transition-all touch-none select-none my-2 group"
             >
-              + {isAr ? "تسبيح" : "Count"}
-            </Button>
-          </div>
+              {/* Outer glow ring */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-primary/40 blur-2xl opacity-60 group-active:opacity-90 transition-opacity" />
+              {/* Glass surface */}
+              <div className="absolute inset-3 rounded-full bg-gradient-to-br from-card to-card/60 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.5),inset_0_1px_0_0_hsl(0_0%_100%/0.1)]" />
+              {/* Progress arc */}
+              <svg
+                className="absolute inset-0 w-full h-full -rotate-90"
+                viewBox="0 0 120 120"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="dhikrGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="hsl(var(--accent))" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="56" fill="none" stroke="hsl(var(--muted)/0.4)" strokeWidth="3" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="56"
+                  fill="none"
+                  stroke="url(#dhikrGrad)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 56}`}
+                  strokeDashoffset={`${2 * Math.PI * 56 * (1 - progressPct / 100)}`}
+                  className="transition-[stroke-dashoffset] duration-500 ease-out drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+                />
+              </svg>
+              {/* Counter */}
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                <span className="text-7xl sm:text-8xl font-extralight text-foreground tabular-nums tracking-tight bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text">
+                  {count}
+                </span>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="h-px w-6 bg-gradient-to-r from-transparent to-accent/60" />
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-accent font-semibold">
+                    {count >= activePreset.target ? (isAr ? "تم" : "Done") : `${activePreset.target}`}
+                  </span>
+                  <span className="h-px w-6 bg-gradient-to-l from-transparent to-accent/60" />
+                </div>
+                {progressPct >= 100 && (
+                  <span className="mt-2 text-xs text-primary font-medium animate-fade-in">
+                    ✦ {isAr ? "ما شاء الله" : "MashaAllah"} ✦
+                  </span>
+                )}
+              </div>
+              {/* Inner highlight */}
+              <div className="absolute inset-6 rounded-full pointer-events-none border border-white/5" />
+            </button>
 
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
-            {isAr
-              ? "انقر أي مكان في الدائرة للعدّ"
-              : "Tap anywhere in the circle to count"}
-          </p>
+            <div className="w-full max-w-xs space-y-3">
+              <div className="flex items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={resetCount}
+                  className="gap-2 rounded-full backdrop-blur-sm bg-card/60"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  {isAr ? "إعادة" : "Reset"}
+                </Button>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={increment}
+                  className="rounded-full min-w-[140px] shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)]"
+                >
+                  + {isAr ? "تسبيح" : "Count"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                {isAr ? "انقر الدائرة للعدّ • اهتزاز عند كل ٣٣" : "Tap circle to count • Haptic at every 33"}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
