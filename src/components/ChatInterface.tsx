@@ -6,6 +6,8 @@ import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import MadhabToggle from "@/components/MadhabToggle";
 import QuickTopics from "@/components/QuickTopics";
+import { useAuth } from "@/contexts/AuthContext";
+import { addBookmark } from "@/lib/bookmarks";
 
 interface Message {
   id: string;
@@ -23,6 +25,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/islamic-chat
 const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -41,10 +44,17 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const toggleBookmark = (id: string) => {
+  const toggleBookmark = async (id: string) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
     setMessages((prev) =>
       prev.map((m) => (m.id === id ? { ...m, bookmarked: !m.bookmarked } : m))
     );
+    if (!msg.bookmarked) {
+      const idx = messages.findIndex((m) => m.id === id);
+      const query = idx > 0 ? messages[idx - 1]?.content : "";
+      await addBookmark(user?.id, "chat", { query, response: msg.content });
+    }
     toast({
       title: language === "ar" ? "تم الحفظ" : "Saved",
       description: language === "ar" ? "تم حفظ الإجابة في المفضلة" : "Answer bookmarked for later",
