@@ -596,6 +596,20 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                         {renderTajweed(ayah.text)}
                       </p>
                     )}
+                    {(() => {
+                      const fav = selectedSurahId ? isAyahBookmarked(bookmarks, selectedSurahId, ayah.numberInSurah) : undefined;
+                      return (
+                        <button
+                          onClick={() => toggleAyahFavorite(ayah, selectedSurah?.name.en || "")}
+                          aria-label={fav ? "Unfavorite" : "Favorite"}
+                          className={`shrink-0 p-1.5 rounded-full transition-colors ${
+                            fav ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground hover:text-rose-400 hover:bg-rose-500/5"
+                          }`}
+                        >
+                          <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
+                        </button>
+                      );
+                    })()}
                   </div>
                   {displayMode === "full" && translationMode === "full" && ayah.translation && (
                     <p className="text-sm text-muted-foreground leading-[1.7] sm:pl-11 border-t border-border/50 pt-3">
