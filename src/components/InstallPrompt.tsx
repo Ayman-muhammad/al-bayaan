@@ -82,7 +82,7 @@ const InstallPrompt = () => {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[92vw] max-w-md animate-slide-up">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] w-[92vw] max-w-md animate-slide-up pointer-events-auto">
       <div className="relative rounded-2xl border border-accent/30 bg-card/95 backdrop-blur-md shadow-2xl p-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent pointer-events-none" />
         <button
