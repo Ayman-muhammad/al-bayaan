@@ -8,6 +8,7 @@ import {
   type AdhanSettings, type PrayerKey, type Muezzin,
 } from "@/lib/adhan";
 import { useToast } from "@/hooks/use-toast";
+import { playSignatureChime } from "@/lib/notifications";
 
 interface PrayerTimesProps {
   onBack: () => void;
@@ -54,6 +55,8 @@ const PrayerTimes = ({ onBack }: PrayerTimesProps) => {
 
   const playAdhan = useCallback(
     (prayer: PrayerKey) => {
+      // Play unique signature chime first (works even if browser blocks adhan audio)
+      playSignatureChime();
       const url = prayer === "Fajr" && muezzin.fajrUrl ? muezzin.fajrUrl : muezzin.url;
       if (!audioRef.current) audioRef.current = new Audio();
       audioRef.current.src = url;
