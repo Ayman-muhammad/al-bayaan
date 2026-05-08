@@ -12,12 +12,16 @@ import DhikrPage from "@/components/DhikrPage";
 import ScholarsQA from "@/components/ScholarsQA";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import Dashboard from "@/components/Dashboard";
+import Journeys from "@/components/Journeys";
+import VoiceJournal from "@/components/VoiceJournal";
 import InstallPrompt from "@/components/InstallPrompt";
 import ReminderNudge from "@/components/ReminderNudge";
 import AuthPage from "@/pages/Auth";
 import { useFeedback } from "@/components/FeedbackToast";
+import { armChimeOnFirstInteraction, requestNotifPermission } from "@/lib/notifications";
+import { useAuth } from "@/contexts/AuthContext";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -31,6 +35,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<View>("home");
   const { showFeedback } = useFeedback();
   const [showWelcome, setShowWelcome] = useState(false);
+  const { user, loading } = useAuth();
 
   // Clean stray hash params from any prior auth flow
   useEffect(() => {
@@ -47,7 +52,19 @@ const Index = () => {
       setShowWelcome(true);
       localStorage.setItem("al-bayani-welcomed", "1");
     }
+    armChimeOnFirstInteraction();
+    requestNotifPermission();
   }, []);
+
+  // Auto-redirect returning users to Dashboard
+  useEffect(() => {
+    if (loading) return;
+    const redirected = sessionStorage.getItem("auto-dashboard-done");
+    if (user && !redirected && currentView === "home") {
+      sessionStorage.setItem("auto-dashboard-done", "1");
+      setCurrentView("dashboard");
+    }
+  }, [user, loading, currentView]);
 
   // Save last position
   useEffect(() => {
@@ -91,6 +108,8 @@ const Index = () => {
       {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+      {currentView === "journeys" && <Journeys onBack={() => setCurrentView("home")} />}
+      {currentView === "voice" && <VoiceJournal onBack={() => setCurrentView("home")} />}
       {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
 
       <InstallPrompt />
