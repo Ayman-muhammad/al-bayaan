@@ -21,6 +21,8 @@ import {
   MessageCircle,
   Sparkles,
   Users,
+  Sparkles as SparklesIcon,
+  Mic,
   LayoutDashboard,
   LogIn,
 } from "lucide-react";
@@ -54,6 +56,8 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
     { id: "scholars", icon: Users, labelAr: "علماء", labelEn: "Scholars" },
     { id: "dhikr", icon: Sparkles, labelAr: "الأذكار والأدعية", labelEn: "Dhikr & Dua" },
     { id: "dashboard", icon: LayoutDashboard, labelAr: "لوحة التقدم", labelEn: "Dashboard" },
+    { id: "journeys", icon: SparklesIcon, labelAr: "رحلة 30 يوم", labelEn: "30-Day Journey" },
+    { id: "voice", icon: Mic, labelAr: "يوميات صوتية", labelEn: "Voice Journal" },
     { id: "journey", icon: TrendingUp, labelAr: "رحلتي", labelEn: "My Journey" },
     { id: "favorites", icon: Bookmark, labelAr: "المفضلة", labelEn: "Favorites" },
     { id: "auth", icon: LogIn, labelAr: "حساب", labelEn: "Sign In" },
