@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -14,6 +15,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <ThemeProvider>
         <LanguageProvider>
           <Toaster />
           <Sonner />
@@ -24,6 +26,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </LanguageProvider>
+        </ThemeProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

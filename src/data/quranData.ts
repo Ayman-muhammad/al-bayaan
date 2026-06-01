@@ -128,6 +128,13 @@ export interface Reciter {
 
 export const RECITERS: Reciter[] = [
   {
+    id: "afif-taj",
+    name: { en: "Sheikh Afif Mohamed Taj", ar: "الشيخ عفيف محمد طاج" },
+    server: "https://server16.mp3quran.net/a_taj",
+    style: { en: "Murattal — Hafs ʿan ʿAsim", ar: "مرتل — حفص عن عاصم" },
+    country: { en: "Syria", ar: "سوريا" },
+  },
+  {
     id: "mishary",
     name: { en: "Mishary Rashid Alafasy", ar: "مشاري راشد العفاسي" },
     server: "https://server8.mp3quran.net/afs",
