@@ -25,7 +25,10 @@ import {
   Mic,
   LayoutDashboard,
   LogIn,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface NavbarProps {
   currentView: string;
@@ -34,6 +37,7 @@ interface NavbarProps {
 
 const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const { t, language, toggleLanguage } = useLanguage();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
   // Close drawer on route change
@@ -138,6 +142,16 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
 
         {/* Right controls */}
         <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
