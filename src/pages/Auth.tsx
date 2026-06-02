@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
+import { authFlow } from "@/lib/authFlow";
+import { track } from "@/lib/telemetry";
 
 interface AuthPageProps {
   onBack: () => void;
@@ -68,62 +70,97 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const [showPw, setShowPw] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [trustDevice, setTrustDevice] = useState(true);
+  const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
+  const submitLockRef = useRef(false);
 
   // Auto-suggest preferred method
   useEffect(() => {
     const platform = detectPlatform();
     // Try to set sensible defaults — we don't have apple tab so keep email
     if (platform === "android") setTab("email");
+    track("auth_view", { mode, tab });
   }, []);
 
-  const handleGoogleSignIn = async () => {
+  // Network awareness — Tecno spark on 2G drops constantly
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
+
+  // Auto-scroll focused input above mobile keyboard
+  useEffect(() => {
+    const handler = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      if (!el || !(el.matches?.("input,select,textarea"))) return;
+      setTimeout(() => {
+        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+      }, 280);
+    };
+    document.addEventListener("focusin", handler);
+    return () => document.removeEventListener("focusin", handler);
+  }, []);
+
+  const guard = async (label: string, fn: () => Promise<void>) => {
+    if (submitLockRef.current) { track("auth_double_submit_blocked", { label }); return; }
+    submitLockRef.current = true;
     setLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast({ title: "Error", description: String(result.error), variant: "destructive" });
-      }
-      if (result.redirected) return;
-      onSuccess();
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to sign in with Google", variant: "destructive" });
-    } finally {
+    try { await fn(); } finally {
+      submitLockRef.current = false;
       setLoading(false);
     }
   };
 
+  const buzz = () => { try { navigator.vibrate?.(80); } catch {} };
+
+  const handleGoogleSignIn = async () => {
+    await guard("google", async () => {
+      track("auth_oauth_start", { provider: "google" });
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        track("auth_error", { method: "google", msg: String(result.error).slice(0, 120) });
+        toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        buzz();
+        return;
+      }
+      if (result.redirected) { track("auth_oauth_redirect", { provider: "google" }); return; }
+      track("auth_success", { method: "google" });
+      onSuccess();
+    });
+  };
+
   const handleAppleSignIn = async () => {
-    setLoading(true);
-    try {
+    await guard("apple", async () => {
+      track("auth_oauth_start", { provider: "apple" });
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: window.location.origin,
       });
       if (result.error) {
+        track("auth_error", { method: "apple", msg: String(result.error).slice(0, 120) });
         toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        buzz();
+        return;
       }
-      if (result.redirected) return;
+      if (result.redirected) { track("auth_oauth_redirect", { provider: "apple" }); return; }
+      track("auth_success", { method: "apple" });
       onSuccess();
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to sign in with Apple", variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleGuest = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      localStorage.setItem("al-bayan-guest", "1");
+    await guard("guest", async () => {
+      const res = await authFlow.guest(isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       toast({
         title: isAr ? "أهلاً بك" : "Welcome!",
         description: isAr ? "تم الدخول كضيف. يمكنك الترقية لاحقاً" : "Signed in as guest. Upgrade anytime.",
       });
       onSuccess();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Guest sign-in failed", variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleForgot = async () => {
@@ -131,61 +168,34 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       toast({ title: isAr ? "أدخل البريد" : "Enter your email first", variant: "destructive" });
       return;
     }
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/`,
-      });
-      if (error) throw error;
+    await guard("forgot", async () => {
+      const res = await authFlow.resetPassword(email, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       toast({
         title: isAr ? "تم الإرسال" : "Check your email",
         description: isAr ? "أرسلنا لك رابط إعادة تعيين كلمة المرور" : "We sent a password reset link",
       });
       setForgotMode(false);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setLoading(true);
-
-    try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: name || email },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        // Auto-confirm enabled — try immediate sign-in
-        await supabase.auth.signInWithPassword({ email, password });
-        toast({
-          title: isAr ? "أهلاً بك" : "Welcome!",
-          description: isAr ? "تم إنشاء حسابك بنجاح" : "Account created successfully",
-        });
-        onSuccess();
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        onSuccess();
-      }
-    } catch (error: any) {
-      const msg = error.message || "";
-      const friendly = msg.toLowerCase().includes("invalid")
-        ? (isAr ? "بيانات الدخول غير صحيحة" : "Email or password is incorrect")
-        : msg.toLowerCase().includes("already")
-          ? (isAr ? "الحساب موجود بالفعل، حاول تسجيل الدخول" : "Account already exists. Try signing in.")
-          : msg;
-      toast({ title: isAr ? "خطأ" : "Oops", description: friendly, variant: "destructive" });
-    } finally {
-      setLoading(false);
+    if (password.length < 6) {
+      toast({ title: isAr ? "خطأ" : "Oops", description: isAr ? "كلمة المرور 6 أحرف على الأقل" : "Password must be at least 6 characters", variant: "destructive" });
+      buzz();
+      return;
     }
+    track("auth_submit", { mode, tab: "email" });
+    await guard("email", async () => {
+      const res = mode === "signup"
+        ? await authFlow.signUp(email, password, name, isAr)
+        : await authFlow.signIn(email, password, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
+      if (mode === "signup") toast({ title: isAr ? "أهلاً بك" : "Welcome!", description: isAr ? "تم إنشاء حسابك" : "Account created" });
+      onSuccess();
+    });
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -198,31 +208,26 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       toast({ title: isAr ? "انتظر" : "Please wait", description: isAr ? `حاول بعد ${wait} ثانية` : `Try again in ${wait}s`, variant: "destructive" });
       return;
     }
-    setLoading(true);
-    try {
+    track("auth_submit", { mode, tab: "phone" });
+    await guard("otp_send", async () => {
       const formatted = `${countryCode}${phone.replace(/\D/g, "")}`;
-      const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
-      if (error) throw error;
+      const res = await authFlow.sendOtp(formatted, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       localStorage.setItem("otp-last-sent", String(Date.now()));
       setOtpSent(true);
       toast({ title: isAr ? "تم الإرسال" : "Code Sent", description: isAr ? "أدخل الرمز المرسل" : "Enter the code we sent" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp) return;
-    setLoading(true);
-    try {
+    await guard("otp_verify", async () => {
       const formatted = `${countryCode}${phone.replace(/\D/g, "")}`;
-      const { error } = await supabase.auth.verifyOtp({ phone: formatted, token: otp, type: "sms" });
-      if (error) throw error;
+      const res = await authFlow.verifyOtp(formatted, otp, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       onSuccess();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const pwStrength = passwordStrength(password);
