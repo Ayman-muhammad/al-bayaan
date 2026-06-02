@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
+import { authFlow } from "@/lib/authFlow";
+import { track } from "@/lib/telemetry";
 
 interface AuthPageProps {
   onBack: () => void;
@@ -68,62 +70,97 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const [showPw, setShowPw] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [trustDevice, setTrustDevice] = useState(true);
+  const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
+  const submitLockRef = useRef(false);
 
   // Auto-suggest preferred method
   useEffect(() => {
     const platform = detectPlatform();
     // Try to set sensible defaults — we don't have apple tab so keep email
     if (platform === "android") setTab("email");
+    track("auth_view", { mode, tab });
   }, []);
 
-  const handleGoogleSignIn = async () => {
+  // Network awareness — Tecno spark on 2G drops constantly
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
+
+  // Auto-scroll focused input above mobile keyboard
+  useEffect(() => {
+    const handler = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      if (!el || !(el.matches?.("input,select,textarea"))) return;
+      setTimeout(() => {
+        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+      }, 280);
+    };
+    document.addEventListener("focusin", handler);
+    return () => document.removeEventListener("focusin", handler);
+  }, []);
+
+  const guard = async (label: string, fn: () => Promise<void>) => {
+    if (submitLockRef.current) { track("auth_double_submit_blocked", { label }); return; }
+    submitLockRef.current = true;
     setLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast({ title: "Error", description: String(result.error), variant: "destructive" });
-      }
-      if (result.redirected) return;
-      onSuccess();
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to sign in with Google", variant: "destructive" });
-    } finally {
+    try { await fn(); } finally {
+      submitLockRef.current = false;
       setLoading(false);
     }
   };
 
+  const buzz = () => { try { navigator.vibrate?.(80); } catch {} };
+
+  const handleGoogleSignIn = async () => {
+    await guard("google", async () => {
+      track("auth_oauth_start", { provider: "google" });
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        track("auth_error", { method: "google", msg: String(result.error).slice(0, 120) });
+        toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        buzz();
+        return;
+      }
+      if (result.redirected) { track("auth_oauth_redirect", { provider: "google" }); return; }
+      track("auth_success", { method: "google" });
+      onSuccess();
+    });
+  };
+
   const handleAppleSignIn = async () => {
-    setLoading(true);
-    try {
+    await guard("apple", async () => {
+      track("auth_oauth_start", { provider: "apple" });
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: window.location.origin,
       });
       if (result.error) {
+        track("auth_error", { method: "apple", msg: String(result.error).slice(0, 120) });
         toast({ title: "Error", description: String(result.error), variant: "destructive" });
+        buzz();
+        return;
       }
-      if (result.redirected) return;
+      if (result.redirected) { track("auth_oauth_redirect", { provider: "apple" }); return; }
+      track("auth_success", { method: "apple" });
       onSuccess();
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to sign in with Apple", variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleGuest = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      localStorage.setItem("al-bayan-guest", "1");
+    await guard("guest", async () => {
+      const res = await authFlow.guest(isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       toast({
         title: isAr ? "أهلاً بك" : "Welcome!",
         description: isAr ? "تم الدخول كضيف. يمكنك الترقية لاحقاً" : "Signed in as guest. Upgrade anytime.",
       });
       onSuccess();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Guest sign-in failed", variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleForgot = async () => {
@@ -131,61 +168,34 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       toast({ title: isAr ? "أدخل البريد" : "Enter your email first", variant: "destructive" });
       return;
     }
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/`,
-      });
-      if (error) throw error;
+    await guard("forgot", async () => {
+      const res = await authFlow.resetPassword(email, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       toast({
         title: isAr ? "تم الإرسال" : "Check your email",
         description: isAr ? "أرسلنا لك رابط إعادة تعيين كلمة المرور" : "We sent a password reset link",
       });
       setForgotMode(false);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setLoading(true);
-
-    try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: name || email },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        // Auto-confirm enabled — try immediate sign-in
-        await supabase.auth.signInWithPassword({ email, password });
-        toast({
-          title: isAr ? "أهلاً بك" : "Welcome!",
-          description: isAr ? "تم إنشاء حسابك بنجاح" : "Account created successfully",
-        });
-        onSuccess();
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        onSuccess();
-      }
-    } catch (error: any) {
-      const msg = error.message || "";
-      const friendly = msg.toLowerCase().includes("invalid")
-        ? (isAr ? "بيانات الدخول غير صحيحة" : "Email or password is incorrect")
-        : msg.toLowerCase().includes("already")
-          ? (isAr ? "الحساب موجود بالفعل، حاول تسجيل الدخول" : "Account already exists. Try signing in.")
-          : msg;
-      toast({ title: isAr ? "خطأ" : "Oops", description: friendly, variant: "destructive" });
-    } finally {
-      setLoading(false);
+    if (password.length < 6) {
+      toast({ title: isAr ? "خطأ" : "Oops", description: isAr ? "كلمة المرور 6 أحرف على الأقل" : "Password must be at least 6 characters", variant: "destructive" });
+      buzz();
+      return;
     }
+    track("auth_submit", { mode, tab: "email" });
+    await guard("email", async () => {
+      const res = mode === "signup"
+        ? await authFlow.signUp(email, password, name, isAr)
+        : await authFlow.signIn(email, password, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
+      if (mode === "signup") toast({ title: isAr ? "أهلاً بك" : "Welcome!", description: isAr ? "تم إنشاء حسابك" : "Account created" });
+      onSuccess();
+    });
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -198,39 +208,40 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       toast({ title: isAr ? "انتظر" : "Please wait", description: isAr ? `حاول بعد ${wait} ثانية` : `Try again in ${wait}s`, variant: "destructive" });
       return;
     }
-    setLoading(true);
-    try {
+    track("auth_submit", { mode, tab: "phone" });
+    await guard("otp_send", async () => {
       const formatted = `${countryCode}${phone.replace(/\D/g, "")}`;
-      const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
-      if (error) throw error;
+      const res = await authFlow.sendOtp(formatted, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       localStorage.setItem("otp-last-sent", String(Date.now()));
       setOtpSent(true);
       toast({ title: isAr ? "تم الإرسال" : "Code Sent", description: isAr ? "أدخل الرمز المرسل" : "Enter the code we sent" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp) return;
-    setLoading(true);
-    try {
+    await guard("otp_verify", async () => {
       const formatted = `${countryCode}${phone.replace(/\D/g, "")}`;
-      const { error } = await supabase.auth.verifyOtp({ phone: formatted, token: otp, type: "sms" });
-      if (error) throw error;
+      const res = await authFlow.verifyOtp(formatted, otp, isAr);
+      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
       onSuccess();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    });
   };
 
   const pwStrength = passwordStrength(password);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir={isAr ? "rtl" : "ltr"}>
+    <div className="min-h-[100dvh] bg-background flex flex-col" dir={isAr ? "rtl" : "ltr"} style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {!online && (
+        <div role="status" className="bg-destructive text-destructive-foreground text-xs px-3 py-2 flex items-center justify-center gap-2">
+          <WifiOff className="w-3.5 h-3.5" />
+          {isAr ? "أنت غير متصل. سنحاول مرة أخرى عند عودة الاتصال" : "You're offline. We'll retry when you're back online."}
+        </div>
+      )}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-12 w-12">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className={`font-semibold text-foreground ${isAr ? "font-arabic" : ""}`}>
@@ -238,7 +249,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
         </h1>
       </header>
 
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-start sm:items-center justify-center p-4 pt-6">
         <div className="w-full max-w-md space-y-5">
           {/* Logo */}
           <div className="text-center space-y-2">
@@ -269,7 +280,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           {/* Google Sign In */}
           <Button
             variant="outline"
-            className="w-full gap-2 h-12"
+            className="w-full gap-2 h-14 text-base"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
@@ -282,12 +293,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
             {t("continueWithGoogle")}
           </Button>
 
-          <Button variant="outline" className="w-full gap-2 h-12 bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
+          <Button variant="outline" className="w-full gap-2 h-14 text-base bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
             <Apple className="w-5 h-5" />
             {isAr ? "المتابعة مع Apple" : "Continue with Apple"}
           </Button>
 
-          <Button variant="ghost" className="w-full gap-2 h-11 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
+          <Button variant="ghost" className="w-full gap-2 h-12 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
             <UserCircle2 className="w-4 h-4" />
             {isAr ? "متابعة بدون حساب" : "Continue as Guest"}
           </Button>
@@ -300,20 +311,24 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          <div className="flex gap-1 p-1 bg-muted rounded-lg" role="tablist">
             <button
               type="button"
-              onClick={() => setTab("email")}
-              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              role="tab"
+              aria-selected={tab === "email"}
+              onClick={() => { setTab("email"); track("auth_view", { tab: "email" }); }}
+              className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${tab === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              <Mail className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "البريد" : "Email"}
+              <Mail className="w-4 h-4 inline mr-1" /> {isAr ? "البريد" : "Email"}
             </button>
             <button
               type="button"
-              onClick={() => setTab("phone")}
-              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "phone" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              role="tab"
+              aria-selected={tab === "phone"}
+              onClick={() => { setTab("phone"); track("auth_view", { tab: "phone" }); }}
+              className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${tab === "phone" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              <Phone className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "الهاتف" : "Phone"}
+              <Phone className="w-4 h-4 inline mr-1" /> {isAr ? "الهاتف" : "Phone"}
             </button>
           </div>
 
@@ -324,10 +339,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
+                  autoComplete="name"
+                  enterKeyHint="next"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={isAr ? "الاسم" : "Full Name"}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             )}
@@ -335,26 +352,33 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("email")}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type={showPw ? "text" : "password"}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                enterKeyHint="go"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("password")}
                 required
                 minLength={6}
-                className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-14 pl-10 pr-12 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label="toggle password" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label="toggle password" className="absolute right-1 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-muted-foreground hover:text-foreground">
+                {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
 
@@ -374,7 +398,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               {isAr ? "ثق بهذا الجهاز لمدة 30 يوماً" : "Trust this device for 30 days"}
             </label>
 
-            <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+            <Button type="submit" variant="hero" className="w-full h-14 text-base active:scale-[0.98] transition-transform" disabled={loading || !online}>
               {loading ? (
                 <CrescentSpinner />
               ) : (
@@ -397,9 +421,9 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               </p>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm" />
+                <input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base" />
               </div>
-              <Button onClick={handleForgot} variant="hero" className="w-full h-12" disabled={loading}>
+              <Button onClick={handleForgot} variant="hero" className="w-full h-14 text-base" disabled={loading || !online}>
                 {loading ? <CrescentSpinner /> : (isAr ? "إرسال الرابط" : "Send reset link")}
               </Button>
               <button onClick={() => setForgotMode(false)} className="text-xs text-muted-foreground w-full text-center">
@@ -415,7 +439,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                   disabled={otpSent}
-                  className="px-2 py-3 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                  className="h-14 px-2 bg-background border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
@@ -425,12 +449,15 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="send"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="555 123 4567"
                   required
                   disabled={otpSent}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                  className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 />
                 </div>
               </div>
@@ -440,16 +467,18 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   <input
                     type="text"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
+                    enterKeyHint="go"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     placeholder={isAr ? "رمز التحقق" : "6-digit code"}
                     required
                     maxLength={6}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
+                    className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring tracking-[0.5em] text-center"
                   />
                 </div>
               )}
-              <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+              <Button type="submit" variant="hero" className="w-full h-14 text-base active:scale-[0.98] transition-transform" disabled={loading || !online}>
                 {loading
                   ? <CrescentSpinner />
                   : otpSent ? (isAr ? "تأكيد" : "Verify") : (isAr ? "إرسال الرمز" : "Send Code")}
