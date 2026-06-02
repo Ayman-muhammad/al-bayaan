@@ -233,9 +233,15 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const pwStrength = passwordStrength(password);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir={isAr ? "rtl" : "ltr"}>
+    <div className="min-h-[100dvh] bg-background flex flex-col" dir={isAr ? "rtl" : "ltr"} style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {!online && (
+        <div role="status" className="bg-destructive text-destructive-foreground text-xs px-3 py-2 flex items-center justify-center gap-2">
+          <WifiOff className="w-3.5 h-3.5" />
+          {isAr ? "أنت غير متصل. سنحاول مرة أخرى عند عودة الاتصال" : "You're offline. We'll retry when you're back online."}
+        </div>
+      )}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-12 w-12">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className={`font-semibold text-foreground ${isAr ? "font-arabic" : ""}`}>
@@ -243,7 +249,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
         </h1>
       </header>
 
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-start sm:items-center justify-center p-4 pt-6">
         <div className="w-full max-w-md space-y-5">
           {/* Logo */}
           <div className="text-center space-y-2">
@@ -274,7 +280,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           {/* Google Sign In */}
           <Button
             variant="outline"
-            className="w-full gap-2 h-12"
+            className="w-full gap-2 h-14 text-base"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
@@ -287,12 +293,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
             {t("continueWithGoogle")}
           </Button>
 
-          <Button variant="outline" className="w-full gap-2 h-12 bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
+          <Button variant="outline" className="w-full gap-2 h-14 text-base bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
             <Apple className="w-5 h-5" />
             {isAr ? "المتابعة مع Apple" : "Continue with Apple"}
           </Button>
 
-          <Button variant="ghost" className="w-full gap-2 h-11 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
+          <Button variant="ghost" className="w-full gap-2 h-12 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
             <UserCircle2 className="w-4 h-4" />
             {isAr ? "متابعة بدون حساب" : "Continue as Guest"}
           </Button>
@@ -305,20 +311,24 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          <div className="flex gap-1 p-1 bg-muted rounded-lg" role="tablist">
             <button
               type="button"
-              onClick={() => setTab("email")}
-              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              role="tab"
+              aria-selected={tab === "email"}
+              onClick={() => { setTab("email"); track("auth_view", { tab: "email" }); }}
+              className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${tab === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              <Mail className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "البريد" : "Email"}
+              <Mail className="w-4 h-4 inline mr-1" /> {isAr ? "البريد" : "Email"}
             </button>
             <button
               type="button"
-              onClick={() => setTab("phone")}
-              className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${tab === "phone" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              role="tab"
+              aria-selected={tab === "phone"}
+              onClick={() => { setTab("phone"); track("auth_view", { tab: "phone" }); }}
+              className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${tab === "phone" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              <Phone className="w-3.5 h-3.5 inline mr-1" /> {isAr ? "الهاتف" : "Phone"}
+              <Phone className="w-4 h-4 inline mr-1" /> {isAr ? "الهاتف" : "Phone"}
             </button>
           </div>
 
@@ -329,10 +339,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
+                  autoComplete="name"
+                  enterKeyHint="next"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={isAr ? "الاسم" : "Full Name"}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             )}
@@ -340,26 +352,33 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("email")}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type={showPw ? "text" : "password"}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                enterKeyHint="go"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("password")}
                 required
                 minLength={6}
-                className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-14 pl-10 pr-12 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label="toggle password" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label="toggle password" className="absolute right-1 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-muted-foreground hover:text-foreground">
+                {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
 
@@ -379,7 +398,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               {isAr ? "ثق بهذا الجهاز لمدة 30 يوماً" : "Trust this device for 30 days"}
             </label>
 
-            <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+            <Button type="submit" variant="hero" className="w-full h-14 text-base active:scale-[0.98] transition-transform" disabled={loading || !online}>
               {loading ? (
                 <CrescentSpinner />
               ) : (
@@ -402,9 +421,9 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
               </p>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm" />
+                <input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base" />
               </div>
-              <Button onClick={handleForgot} variant="hero" className="w-full h-12" disabled={loading}>
+              <Button onClick={handleForgot} variant="hero" className="w-full h-14 text-base" disabled={loading || !online}>
                 {loading ? <CrescentSpinner /> : (isAr ? "إرسال الرابط" : "Send reset link")}
               </Button>
               <button onClick={() => setForgotMode(false)} className="text-xs text-muted-foreground w-full text-center">
@@ -420,7 +439,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                   disabled={otpSent}
-                  className="px-2 py-3 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                  className="h-14 px-2 bg-background border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
@@ -430,12 +449,15 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="send"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="555 123 4567"
                   required
                   disabled={otpSent}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                  className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 />
                 </div>
               </div>
@@ -445,16 +467,18 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
                   <input
                     type="text"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
+                    enterKeyHint="go"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     placeholder={isAr ? "رمز التحقق" : "6-digit code"}
                     required
                     maxLength={6}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
+                    className="w-full h-14 pl-10 pr-4 bg-background border border-border rounded-xl text-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring tracking-[0.5em] text-center"
                   />
                 </div>
               )}
-              <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+              <Button type="submit" variant="hero" className="w-full h-14 text-base active:scale-[0.98] transition-transform" disabled={loading || !online}>
                 {loading
                   ? <CrescentSpinner />
                   : otpSent ? (isAr ? "تأكيد" : "Verify") : (isAr ? "إرسال الرمز" : "Send Code")}
