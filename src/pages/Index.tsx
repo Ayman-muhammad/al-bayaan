@@ -16,12 +16,13 @@ import Journeys from "@/components/Journeys";
 import VoiceJournal from "@/components/VoiceJournal";
 import InstallPrompt from "@/components/InstallPrompt";
 import ReminderNudge from "@/components/ReminderNudge";
+import AdminPanel from "@/components/AdminPanel";
 import AuthPage from "@/pages/Auth";
 import { useFeedback } from "@/components/FeedbackToast";
 import { armChimeOnFirstInteraction, requestNotifPermission } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -110,6 +111,7 @@ const Index = () => {
       {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
       {currentView === "journeys" && <Journeys onBack={() => setCurrentView("home")} />}
       {currentView === "voice" && <VoiceJournal onBack={() => setCurrentView("home")} />}
+      {currentView === "admin" && <AdminPanel onBack={() => setCurrentView("home")} />}
       {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
 
       <InstallPrompt />

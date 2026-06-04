@@ -27,8 +27,10 @@ import {
   LogIn,
   Sun,
   Moon,
+  Shield,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 
 interface NavbarProps {
   currentView: string;
@@ -39,6 +41,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const { t, language, toggleLanguage } = useLanguage();
   const { theme, toggle: toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const { isAdmin } = useIsAdmin();
 
   // Close drawer on route change
   useEffect(() => {
@@ -66,6 +69,8 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
     { id: "favorites", icon: Bookmark, labelAr: "المفضلة", labelEn: "Favorites" },
     { id: "auth", icon: LogIn, labelAr: "حساب", labelEn: "Sign In" },
   ];
+
+  const adminLink = { id: "admin", icon: Shield, labelAr: "لوحة المشرف", labelEn: "Admin Panel" };
 
   const renderLinkButton = (
     link: { id: string; icon: any; labelAr: string; labelEn: string },
@@ -211,6 +216,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
                     {isAr ? "المزيد" : "Explore"}
                   </p>
                   {secondaryLinks.map((l) => renderLinkButton(l, "mobile"))}
+                  {isAdmin && renderLinkButton(adminLink, "mobile")}
                 </div>
               </div>
 
