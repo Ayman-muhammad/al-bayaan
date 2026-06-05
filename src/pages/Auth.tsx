@@ -80,7 +80,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     // Try to set sensible defaults — we don't have apple tab so keep email
     if (platform === "android") setTab("email");
     track("auth_view", { mode, tab });
-  }, []);
+  }, [mode, tab]);
 
   // Network awareness — Tecno spark on 2G drops constantly
   useEffect(() => {
@@ -97,7 +97,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       const el = e.target as HTMLElement;
       if (!el || !(el.matches?.("input,select,textarea"))) return;
       setTimeout(() => {
-        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { return; }
       }, 280);
     };
     document.addEventListener("focusin", handler);
@@ -114,7 +114,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     }
   };
 
-  const buzz = () => { try { navigator.vibrate?.(80); } catch {} };
+  const buzz = () => { try { navigator.vibrate?.(80); } catch { return; } };
 
   const handleGoogleSignIn = async () => {
     await guard("google", async () => {
