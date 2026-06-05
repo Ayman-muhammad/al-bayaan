@@ -48,7 +48,9 @@ const writeLocalCopy = (session: StoredSession | null) => {
   try {
     if (session) localStorage.setItem(`${DB_NAME}:${SESSION_KEY}`, JSON.stringify(session));
     else localStorage.removeItem(`${DB_NAME}:${SESSION_KEY}`);
-  } catch {}
+  } catch {
+    return;
+  }
 };
 
 const readVault = async (): Promise<StoredSession | null> => {
@@ -67,7 +69,9 @@ const readVault = async (): Promise<StoredSession | null> => {
         memorySession = value;
         return value;
       }
-    } catch {}
+    } catch {
+      return readLocalCopy();
+    }
   }
 
   memorySession = readLocalCopy();
@@ -116,7 +120,9 @@ export const persistSessionVault = async (session: Session | null) => {
       req.onsuccess = () => resolve();
       req.onerror = () => resolve();
     });
-  } catch {}
+  } catch {
+    return;
+  }
 };
 
 export const clearSessionVault = () => persistSessionVault(null);
@@ -148,7 +154,9 @@ export const getSessionWithRestore = async (): Promise<Session | null> => {
       await persistSessionVault(data.session);
       return data.session;
     }
-  } catch {}
+  } catch {
+    return restoreSessionFromVault();
+  }
 
   return restoreSessionFromVault();
 };
@@ -184,7 +192,9 @@ export const beginMobileOAuthRedirect = (provider: "google" | "apple") => {
   try {
     sessionStorage.setItem(OAUTH_STATE_KEY, state);
     localStorage.setItem(OAUTH_STATE_KEY, state);
-  } catch {}
+  } catch {
+    // Storage may be unavailable in private/embedded mobile browsers; redirect still works.
+  }
 
   const params = new URLSearchParams({ provider, redirect_uri: redirectUri, state });
   if (provider === "google") {
