@@ -7,6 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "./telemetry";
 import type { Session, AuthError } from "@supabase/supabase-js";
+import { persistSessionVault } from "./mobileAuth";
 
 const TIMEOUT_MS = 15_000;
 const MIRROR_KEY = "al-bayan-session-mirror";
@@ -30,10 +31,14 @@ export const mirrorSession = (session: Session | null) => {
   try {
     if (session) sessionStorage.setItem(MIRROR_KEY, JSON.stringify({ at: Date.now(), uid: session.user.id }));
     else sessionStorage.removeItem(MIRROR_KEY);
-  } catch {}
+  } catch {
+    return;
+  }
   try {
     if (session) document.cookie = `sb-mirror=1; path=/; max-age=2592000; samesite=lax`;
-  } catch {}
+  } catch {
+    return;
+  }
 };
 
 export interface AuthResult {
@@ -67,6 +72,7 @@ export const authFlow = {
       );
       if (error) throw error;
       mirrorSession(data.session);
+      await persistSessionVault(data.session);
       track("auth_success", { method: "email" });
       return { ok: true, session: data.session };
     } catch (e) {
@@ -85,7 +91,7 @@ export const authFlow = {
           password,
           options: {
             data: { full_name: fullName || cleaned },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         }),
         "signUp",
@@ -97,6 +103,7 @@ export const authFlow = {
         "signUp.autoSignIn",
       );
       mirrorSession(si?.session ?? null);
+      await persistSessionVault(si?.session ?? null);
       track("auth_success", { method: "email_signup" });
       return { ok: true, session: si?.session ?? null };
     } catch (e) {
@@ -126,6 +133,7 @@ export const authFlow = {
       );
       if (error) throw error;
       mirrorSession(data.session);
+      await persistSessionVault(data.session);
       track("auth_otp_verified");
       return { ok: true, session: data.session };
     } catch (e) {
@@ -147,20 +155,6 @@ export const authFlow = {
       return { ok: true };
     } catch (e) {
       track("auth_error", { method: "reset", msg: String((e as Error)?.message || e).slice(0, 120) });
-      return { ok: false, error: friendly(e, isAr) };
-    }
-  },
-
-  async guest(isAr = false): Promise<AuthResult> {
-    try {
-      const { data, error } = await withTimeout(supabase.auth.signInAnonymously(), "guest");
-      if (error) throw error;
-      mirrorSession(data.session);
-      localStorage.setItem("al-bayan-guest", "1");
-      track("auth_guest");
-      return { ok: true, session: data.session };
-    } catch (e) {
-      track("auth_error", { method: "guest", msg: String((e as Error)?.message || e).slice(0, 120) });
       return { ok: false, error: friendly(e, isAr) };
     }
   },

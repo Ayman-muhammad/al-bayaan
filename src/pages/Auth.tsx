@@ -4,9 +4,10 @@ import { lovable } from "@/integrations/lovable/index";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
 import { authFlow } from "@/lib/authFlow";
 import { track } from "@/lib/telemetry";
+import { beginMobileOAuthRedirect, isMobileAuthDevice } from "@/lib/mobileAuth";
 
 interface AuthPageProps {
   onBack: () => void;
@@ -79,7 +80,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     // Try to set sensible defaults — we don't have apple tab so keep email
     if (platform === "android") setTab("email");
     track("auth_view", { mode, tab });
-  }, []);
+  }, [mode, tab]);
 
   // Network awareness — Tecno spark on 2G drops constantly
   useEffect(() => {
@@ -96,7 +97,7 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       const el = e.target as HTMLElement;
       if (!el || !(el.matches?.("input,select,textarea"))) return;
       setTimeout(() => {
-        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { return; }
       }, 280);
     };
     document.addEventListener("focusin", handler);
@@ -113,13 +114,18 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     }
   };
 
-  const buzz = () => { try { navigator.vibrate?.(80); } catch {} };
+  const buzz = () => { try { navigator.vibrate?.(80); } catch { return; } };
 
   const handleGoogleSignIn = async () => {
     await guard("google", async () => {
       track("auth_oauth_start", { provider: "google" });
+      if (isMobileAuthDevice()) {
+        beginMobileOAuthRedirect("google");
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth/callback`,
+        extraParams: { prompt: "select_account", access_type: "offline" },
       });
       if (result.error) {
         track("auth_error", { method: "google", msg: String(result.error).slice(0, 120) });
@@ -136,8 +142,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const handleAppleSignIn = async () => {
     await guard("apple", async () => {
       track("auth_oauth_start", { provider: "apple" });
+      if (isMobileAuthDevice()) {
+        beginMobileOAuthRedirect("apple");
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) {
         track("auth_error", { method: "apple", msg: String(result.error).slice(0, 120) });
@@ -147,18 +157,6 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
       }
       if (result.redirected) { track("auth_oauth_redirect", { provider: "apple" }); return; }
       track("auth_success", { method: "apple" });
-      onSuccess();
-    });
-  };
-
-  const handleGuest = async () => {
-    await guard("guest", async () => {
-      const res = await authFlow.guest(isAr);
-      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
-      toast({
-        title: isAr ? "أهلاً بك" : "Welcome!",
-        description: isAr ? "تم الدخول كضيف. يمكنك الترقية لاحقاً" : "Signed in as guest. Upgrade anytime.",
-      });
       onSuccess();
     });
   };
@@ -296,11 +294,6 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           <Button variant="outline" className="w-full gap-2 h-14 text-base bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
             <Apple className="w-5 h-5" />
             {isAr ? "المتابعة مع Apple" : "Continue with Apple"}
-          </Button>
-
-          <Button variant="ghost" className="w-full gap-2 h-12 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
-            <UserCircle2 className="w-4 h-4" />
-            {isAr ? "متابعة بدون حساب" : "Continue as Guest"}
           </Button>
 
           <div className="relative">
