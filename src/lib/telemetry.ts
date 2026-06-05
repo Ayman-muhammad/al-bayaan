@@ -16,7 +16,11 @@ export type TrackEvent =
   | "auth_forgot_sent"
   | "auth_double_submit_blocked"
   | "auth_network_timeout"
-  | "auth_offline_attempt";
+  | "auth_offline_attempt"
+  | "auth_signout"
+  | "profile_view"
+  | "profile_update"
+  | "profile_avatar_update";
 
 const KEY = "al-bayan-telemetry";
 const MAX_LOCAL = 200;
