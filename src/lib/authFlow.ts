@@ -31,10 +31,14 @@ export const mirrorSession = (session: Session | null) => {
   try {
     if (session) sessionStorage.setItem(MIRROR_KEY, JSON.stringify({ at: Date.now(), uid: session.user.id }));
     else sessionStorage.removeItem(MIRROR_KEY);
-  } catch {}
+  } catch {
+    return;
+  }
   try {
     if (session) document.cookie = `sb-mirror=1; path=/; max-age=2592000; samesite=lax`;
-  } catch {}
+  } catch {
+    return;
+  }
 };
 
 export interface AuthResult {
