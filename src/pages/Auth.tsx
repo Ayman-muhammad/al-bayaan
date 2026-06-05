@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
 import { authFlow } from "@/lib/authFlow";
 import { track } from "@/lib/telemetry";
+import { beginMobileOAuthRedirect, isMobileAuthDevice } from "@/lib/mobileAuth";
 
 interface AuthPageProps {
   onBack: () => void;
@@ -118,8 +119,13 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const handleGoogleSignIn = async () => {
     await guard("google", async () => {
       track("auth_oauth_start", { provider: "google" });
+      if (isMobileAuthDevice()) {
+        beginMobileOAuthRedirect("google");
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth/callback`,
+        extraParams: { prompt: "select_account", access_type: "offline" },
       });
       if (result.error) {
         track("auth_error", { method: "google", msg: String(result.error).slice(0, 120) });
@@ -136,8 +142,12 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
   const handleAppleSignIn = async () => {
     await guard("apple", async () => {
       track("auth_oauth_start", { provider: "apple" });
+      if (isMobileAuthDevice()) {
+        beginMobileOAuthRedirect("apple");
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) {
         track("auth_error", { method: "apple", msg: String(result.error).slice(0, 120) });
