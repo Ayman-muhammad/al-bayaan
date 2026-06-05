@@ -27,7 +27,7 @@ export const ensureUserRecord = async (user: User | null) => {
 
     if (profileError) throw profileError;
 
-    await (supabase as any)
+    await supabase
       .from("user_stats")
       .upsert({ user_id: user.id }, { onConflict: "user_id" });
 
