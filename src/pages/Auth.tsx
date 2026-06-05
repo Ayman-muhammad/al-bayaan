@@ -4,7 +4,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, UserCircle2, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Phone, KeyRound, Eye, EyeOff, Apple, Sparkles, Shield, Heart, TrendingUp, WifiOff } from "lucide-react";
 import { authFlow } from "@/lib/authFlow";
 import { track } from "@/lib/telemetry";
 import { beginMobileOAuthRedirect, isMobileAuthDevice } from "@/lib/mobileAuth";
@@ -161,18 +161,6 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
     });
   };
 
-  const handleGuest = async () => {
-    await guard("guest", async () => {
-      const res = await authFlow.guest(isAr);
-      if (!res.ok) { toast({ title: isAr ? "خطأ" : "Oops", description: res.error, variant: "destructive" }); buzz(); return; }
-      toast({
-        title: isAr ? "أهلاً بك" : "Welcome!",
-        description: isAr ? "تم الدخول كضيف. يمكنك الترقية لاحقاً" : "Signed in as guest. Upgrade anytime.",
-      });
-      onSuccess();
-    });
-  };
-
   const handleForgot = async () => {
     if (!email) {
       toast({ title: isAr ? "أدخل البريد" : "Enter your email first", variant: "destructive" });
@@ -306,11 +294,6 @@ const AuthPage = ({ onBack, onSuccess }: AuthPageProps) => {
           <Button variant="outline" className="w-full gap-2 h-14 text-base bg-foreground text-background hover:bg-foreground/90" onClick={handleAppleSignIn} disabled={loading}>
             <Apple className="w-5 h-5" />
             {isAr ? "المتابعة مع Apple" : "Continue with Apple"}
-          </Button>
-
-          <Button variant="ghost" className="w-full gap-2 h-12 border border-dashed border-border" onClick={handleGuest} disabled={loading}>
-            <UserCircle2 className="w-4 h-4" />
-            {isAr ? "متابعة بدون حساب" : "Continue as Guest"}
           </Button>
 
           <div className="relative">
