@@ -158,19 +158,4 @@ export const authFlow = {
       return { ok: false, error: friendly(e, isAr) };
     }
   },
-
-  async guest(isAr = false): Promise<AuthResult> {
-    try {
-      const { data, error } = await withTimeout(supabase.auth.signInAnonymously(), "guest");
-      if (error) throw error;
-      mirrorSession(data.session);
-      await persistSessionVault(data.session);
-      localStorage.setItem("al-bayan-guest", "1");
-      track("auth_guest");
-      return { ok: true, session: data.session };
-    } catch (e) {
-      track("auth_error", { method: "guest", msg: String((e as Error)?.message || e).slice(0, 120) });
-      return { ok: false, error: friendly(e, isAr) };
-    }
-  },
 };
