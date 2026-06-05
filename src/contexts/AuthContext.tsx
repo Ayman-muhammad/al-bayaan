@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { mirrorSession } from "@/lib/authFlow";
 import { track } from "@/lib/telemetry";
 import { clearSessionVault, getSessionWithRestore, persistSessionVault } from "@/lib/mobileAuth";
+import { ensureUserRecord } from "@/lib/userBootstrap";
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       mirrorSession(session);
       persistSessionVault(session);
+      ensureUserRecord(session?.user ?? null);
       track("auth_view", { event });
     });
 
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       setLoading(false);
       mirrorSession(session);
+      ensureUserRecord(session?.user ?? null);
     }).catch(() => setLoading(false));
 
     const onResume = () => {
@@ -47,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(next);
         setUser(next?.user ?? null);
         mirrorSession(next);
+        ensureUserRecord(next?.user ?? null);
       }).catch(() => {});
     };
 
