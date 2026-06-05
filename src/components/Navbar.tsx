@@ -28,6 +28,7 @@ import {
   Sun,
   Moon,
   Shield,
+  UserCircle2,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsAdmin } from "@/lib/useIsAdmin";
@@ -70,6 +71,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
     { id: "auth", icon: LogIn, labelAr: "حساب", labelEn: "Sign In" },
   ];
 
+  const profileLink = { id: "profile", icon: UserCircle2, labelAr: "ملفي الشخصي", labelEn: "My Profile" };
   const adminLink = { id: "admin", icon: Shield, labelAr: "لوحة المشرف", labelEn: "Admin Panel" };
 
   const renderLinkButton = (
@@ -216,6 +218,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
                     {isAr ? "المزيد" : "Explore"}
                   </p>
                   {secondaryLinks.map((l) => renderLinkButton(l, "mobile"))}
+                  {renderLinkButton(profileLink, "mobile")}
                   {isAdmin && renderLinkButton(adminLink, "mobile")}
                 </div>
               </div>
