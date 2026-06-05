@@ -80,8 +80,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           id: string
           preferred_language: string | null
           preferred_reciter: string | null
@@ -89,8 +91,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id: string
           preferred_language?: string | null
           preferred_reciter?: string | null
@@ -98,8 +102,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id?: string
           preferred_language?: string | null
           preferred_reciter?: string | null
@@ -178,6 +184,48 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          ayahs_read: number
+          created_at: string
+          current_streak: number
+          days_active: number
+          family_goals_met: number
+          id: string
+          last_active_date: string | null
+          longest_streak: number
+          recitations_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ayahs_read?: number
+          created_at?: string
+          current_streak?: number
+          days_active?: number
+          family_goals_met?: number
+          id?: string
+          last_active_date?: string | null
+          longest_streak?: number
+          recitations_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ayahs_read?: number
+          created_at?: string
+          current_streak?: number
+          days_active?: number
+          family_goals_met?: number
+          id?: string
+          last_active_date?: string | null
+          longest_streak?: number
+          recitations_completed?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
