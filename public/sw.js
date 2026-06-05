@@ -1,4 +1,4 @@
-const CACHE_NAME = "al-bayan-v3";
+const CACHE_NAME = "al-bayan-v4";
 const ADHAN_CACHE = "al-bayan-adhan-v1";
 const STATIC_ASSETS = [
   "/",
@@ -37,7 +37,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/~oauth") ||
     url.pathname.startsWith("/auth") ||
-    url.hostname.includes("supabase.co")
+    url.hostname.includes("supabase.co") ||
+    url.hostname.includes("oauth.lovable.app")
   ) {
     return;
   }
