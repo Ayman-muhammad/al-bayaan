@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { mirrorSession } from "@/lib/authFlow";
 import { track } from "@/lib/telemetry";
+import { clearSessionVault, getSessionWithRestore, persistSessionVault } from "@/lib/mobileAuth";
 
 interface AuthContextType {
   user: User | null;
@@ -29,22 +30,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       setLoading(false);
       mirrorSession(session);
+      persistSessionVault(session);
       track("auth_view", { event });
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionWithRestore().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       mirrorSession(session);
-    });
+    }).catch(() => setLoading(false));
 
-    return () => subscription.unsubscribe();
+    const onResume = () => {
+      if (document.visibilityState !== "visible") return;
+      getSessionWithRestore().then((next) => {
+        setSession(next);
+        setUser(next?.user ?? null);
+        mirrorSession(next);
+      }).catch(() => {});
+    };
+
+    const onOnline = () => onResume();
+
+    document.addEventListener("visibilitychange", onResume);
+    window.addEventListener("online", onOnline);
+
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", onResume);
+      window.removeEventListener("online", onOnline);
+    };
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     mirrorSession(null);
+    await clearSessionVault();
   };
 
   return (
