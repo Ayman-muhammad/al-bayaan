@@ -29,6 +29,7 @@ import {
   Moon,
   Shield,
   UserCircle2,
+  Heart,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsAdmin } from "@/lib/useIsAdmin";
@@ -61,6 +62,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const secondaryLinks = [
     { id: "audio", icon: Headphones, labelAr: "الاستماع", labelEn: "Listen" },
     { id: "chat", icon: MessageCircle, labelAr: "اسأل", labelEn: "Ask AI" },
+    { id: "family", icon: Heart, labelAr: "حلقة العائلة", labelEn: "Family Circle" },
     { id: "scholars", icon: Users, labelAr: "علماء", labelEn: "Scholars" },
     { id: "dhikr", icon: Sparkles, labelAr: "الأذكار والأدعية", labelEn: "Dhikr & Dua" },
     { id: "dashboard", icon: LayoutDashboard, labelAr: "لوحة التقدم", labelEn: "Dashboard" },
