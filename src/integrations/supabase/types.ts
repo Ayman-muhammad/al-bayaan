@@ -38,6 +38,195 @@ export type Database = {
         }
         Relationships: []
       }
+      circle_activity: {
+        Row: {
+          action: string
+          circle_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          circle_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          user_id: string
+        }
+        Update: {
+          action?: string
+          circle_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_activity_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circle_progress: {
+        Row: {
+          circle_id: string
+          goal_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verse_number: number
+        }
+        Insert: {
+          circle_id: string
+          goal_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verse_number: number
+        }
+        Update: {
+          circle_id?: string
+          goal_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verse_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_progress_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_progress_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circles: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          max_members: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          invite_code: string
+          max_members?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          circle_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          deadline: string
+          end_verse: number
+          id: string
+          start_verse: number
+          surah_number: number
+        }
+        Insert: {
+          circle_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          deadline: string
+          end_verse: number
+          id?: string
+          start_verse: number
+          surah_number: number
+        }
+        Update: {
+          circle_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deadline?: string
+          end_verse?: number
+          id?: string
+          start_verse?: number
+          surah_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memorization_progress: {
         Row: {
           accuracy_score: number | null
@@ -235,6 +424,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invite_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -242,6 +432,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_circle_admin: {
+        Args: { _circle_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_circle_member: {
+        Args: { _circle_id: string; _user_id: string }
+        Returns: boolean
+      }
+      join_circle_by_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
