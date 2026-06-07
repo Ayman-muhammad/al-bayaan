@@ -49,13 +49,18 @@ export default function FamilyCircle({ onBack }: Props) {
   const loadCircles = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("circles")
       .select("id,name,max_members,created_by,active,created_at,updated_at")
       .order("created_at", { ascending: false });
+    if (error) {
+      toast({ title: "Could not load circles", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
     setCircles((data || []).map((c: any) => ({ ...c, invite_code: "" })));
     setLoading(false);
-  }, [user]);
+  }, [toast, user]);
 
   useEffect(() => { loadCircles(); }, [loadCircles]);
 
@@ -151,16 +156,19 @@ function CreateCircle({ onBack, onCreated }: { onBack: () => void; onCreated: (i
   const submit = async () => {
     if (!user || !name.trim()) return;
     setBusy(true);
-    const { data, error } = await (supabase as any)
-      .from("circles")
-      .insert({ name: name.trim(), created_by: user.id, max_members: maxMembers })
-      .select("id,name,max_members,created_by,active,created_at,updated_at")
-      .single();
+    const { data, error } = await (supabase as any).rpc("create_family_circle", {
+      _name: name.trim(),
+      _max_members: maxMembers,
+    });
     setBusy(false);
     if (error) { toast({ title: "Could not create", description: error.message, variant: "destructive" }); return; }
-    const { data: code } = await (supabase as any).rpc("get_circle_invite_code", { _circle_id: data.id });
-    toast({ title: "Circle created", description: code ? `Code: ${code}` : "Share the invite from the circle screen." });
-    onCreated(data.id);
+    const created = Array.isArray(data) ? data[0] : data;
+    if (!created?.circle_id) {
+      toast({ title: "Could not create", description: "The backend did not return a circle ID.", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Circle created", description: created.invite_code ? `Code: ${created.invite_code}` : "Share the invite from the circle screen." });
+    onCreated(created.circle_id);
   };
 
   return (
