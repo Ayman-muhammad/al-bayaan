@@ -328,11 +328,17 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: c }, { data: ms }, { data: gs }] = await Promise.all([
+    const [{ data: c, error: circleError }, { data: ms, error: membersError }, { data: gs, error: goalsError }] = await Promise.all([
       (supabase as any).from("circles").select("id,name,max_members,created_by,active,created_at,updated_at").eq("id", circleId).maybeSingle(),
       (supabase as any).from("circle_members").select("*").eq("circle_id", circleId),
       (supabase as any).from("goals").select("*").eq("circle_id", circleId).is("completed_at", null).order("created_at", { ascending: false }).limit(1),
     ]);
+    const loadError = circleError || membersError || goalsError;
+    if (loadError) {
+      toast({ title: "Could not load circle", description: loadError.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
     let inviteCode = "";
     const meRow = (ms || []).find((m: Member) => m.user_id === user?.id);
     if (c && meRow?.role === "admin") {
@@ -344,18 +350,20 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
     const g = gs?.[0] || null;
     setGoal(g);
     if (g) {
-      const { data: ps } = await (supabase as any).from("circle_progress").select("*").eq("goal_id", g.id);
+      const { data: ps, error: progressError } = await (supabase as any).from("circle_progress").select("*").eq("goal_id", g.id);
+      if (progressError) toast({ title: "Could not load progress", description: progressError.message, variant: "destructive" });
       setProgress(ps || []);
     } else { setProgress([]); }
     const ids = (ms || []).map((m: Member) => m.user_id);
     if (ids.length) {
-      const { data: profs } = await (supabase as any).from("profiles").select("id,display_name,avatar_url").in("id", ids);
+      const { data: profs, error: profilesError } = await (supabase as any).from("profiles").select("id,display_name,avatar_url").in("id", ids);
+      if (profilesError) toast({ title: "Could not load members", description: profilesError.message, variant: "destructive" });
       const map: Record<string, Profile> = {};
       (profs || []).forEach((p: Profile) => { map[p.id] = p; });
       setProfiles(map);
     }
     setLoading(false);
-  }, [circleId]);
+  }, [circleId, toast, user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -389,10 +397,14 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
       const others = prev.filter((p) => !(p.user_id === user.id && p.verse_number === v));
       return [...others, { id: "tmp", user_id: user.id, goal_id: goal.id, verse_number: v, status: next }];
     });
-    await (supabase as any).from("circle_progress").upsert(
+    const { error } = await (supabase as any).from("circle_progress").upsert(
       { circle_id: circleId, goal_id: goal.id, user_id: user.id, verse_number: v, status: next, updated_at: new Date().toISOString() },
       { onConflict: "goal_id,user_id,verse_number" }
     );
+    if (error) {
+      toast({ title: "Could not update progress", description: error.message, variant: "destructive" });
+      load();
+    }
   };
 
   const familyPct = useMemo(() => {
