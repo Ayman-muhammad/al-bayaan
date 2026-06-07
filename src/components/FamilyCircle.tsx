@@ -49,8 +49,11 @@ export default function FamilyCircle({ onBack }: Props) {
   const loadCircles = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await (supabase as any).from("circles").select("*").order("created_at", { ascending: false });
-    setCircles(data || []);
+    const { data } = await (supabase as any)
+      .from("circles")
+      .select("id,name,max_members,created_by,active,created_at,updated_at")
+      .order("created_at", { ascending: false });
+    setCircles((data || []).map((c: any) => ({ ...c, invite_code: "" })));
     setLoading(false);
   }, [user]);
 
@@ -123,7 +126,9 @@ export default function FamilyCircle({ onBack }: Props) {
                 >
                   <div>
                     <div className="font-semibold">{c.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Code: {c.invite_code}</div>
+                    {c.created_by === user.id && c.invite_code && (
+                      <div className="text-xs text-muted-foreground mt-0.5">Code: {c.invite_code}</div>
+                    )}
                   </div>
                   {c.created_by === user.id && <Crown className="w-4 h-4 text-gold" />}
                 </button>
@@ -149,11 +154,12 @@ function CreateCircle({ onBack, onCreated }: { onBack: () => void; onCreated: (i
     const { data, error } = await (supabase as any)
       .from("circles")
       .insert({ name: name.trim(), created_by: user.id, max_members: maxMembers })
-      .select()
+      .select("id,name,max_members,created_by,active,created_at,updated_at")
       .single();
     setBusy(false);
     if (error) { toast({ title: "Could not create", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Circle created", description: `Code: ${data.invite_code}` });
+    const { data: code } = await (supabase as any).rpc("get_circle_invite_code", { _circle_id: data.id });
+    toast({ title: "Circle created", description: code ? `Code: ${code}` : "Share the invite from the circle screen." });
     onCreated(data.id);
   };
 
@@ -315,11 +321,18 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: c }, { data: ms }, { data: gs }] = await Promise.all([
-      (supabase as any).from("circles").select("*").eq("id", circleId).maybeSingle(),
+      (supabase as any).from("circles").select("id,name,max_members,created_by,active,created_at,updated_at").eq("id", circleId).maybeSingle(),
       (supabase as any).from("circle_members").select("*").eq("circle_id", circleId),
       (supabase as any).from("goals").select("*").eq("circle_id", circleId).is("completed_at", null).order("created_at", { ascending: false }).limit(1),
     ]);
-    setCircle(c); setMembers(ms || []);
+    let inviteCode = "";
+    const meRow = (ms || []).find((m: Member) => m.user_id === user?.id);
+    if (c && meRow?.role === "admin") {
+      const { data: code } = await (supabase as any).rpc("get_circle_invite_code", { _circle_id: circleId });
+      inviteCode = code || "";
+    }
+    setCircle(c ? { ...c, invite_code: inviteCode } : null);
+    setMembers(ms || []);
     const g = gs?.[0] || null;
     setGoal(g);
     if (g) {
@@ -390,11 +403,11 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000)) : 0;
 
   const copyCode = () => {
-    if (!circle) return;
+    if (!circle?.invite_code) { toast({ title: "Only circle admins can share the code" }); return; }
     navigator.clipboard.writeText(circle.invite_code).then(() => toast({ title: "Code copied" }));
   };
   const shareCircle = async () => {
-    if (!circle) return;
+    if (!circle?.invite_code) { toast({ title: "Only circle admins can share the code" }); return; }
     const text = `Join our Family Hifdh Circle "${circle.name}" on Al-Bayan. Code: ${circle.invite_code}`;
     if ((navigator as any).share) { try { await (navigator as any).share({ title: "Al-Bayan", text }); } catch {} }
     else { navigator.clipboard.writeText(text); toast({ title: "Invite copied" }); }
@@ -425,7 +438,9 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
           <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-5 h-5" /></Button>
           <div className="flex-1 min-w-0">
             <div className="font-semibold truncate">{circle.name}</div>
-            <div className="text-xs text-muted-foreground">Code {circle.invite_code} · {members.length}/{circle.max_members}</div>
+            <div className="text-xs text-muted-foreground">
+              {circle.invite_code ? `Code ${circle.invite_code} · ` : ""}{members.length}/{circle.max_members}
+            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={shareCircle} aria-label="Share"><Share2 className="w-5 h-5" /></Button>
           <Button variant="ghost" size="icon" onClick={copyCode} aria-label="Copy code"><Copy className="w-5 h-5" /></Button>
