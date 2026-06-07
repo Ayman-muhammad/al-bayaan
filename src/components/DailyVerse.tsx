@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Sunrise, BookOpen, Heart } from "lucide-react";
+import { Sunrise, BookOpen, Heart, Sparkles, Share2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const DAILY_CONTENT = [
@@ -78,58 +78,100 @@ const DailyVerse = () => {
     setLikeCount((c) => (liked ? c - 1 : c + 1));
   };
 
+  const handleShare = async () => {
+    const text = `${daily.verse.ar}\n\n"${daily.verse.en}"\n— ${daily.reference}`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Al-Bayan • Daily Verse", text });
+      else await navigator.clipboard.writeText(text);
+    } catch {}
+  };
+
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 space-y-4 hover:border-accent transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sunrise className="w-5 h-5 text-accent" />
-          <h3 className={`font-semibold text-foreground ${language === "ar" ? "font-arabic" : ""}`}>
-            {language === "ar" ? "رحلتك الروحية اليومية" : "Daily Spiritual Journey"}
-          </h3>
+    <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 group">
+      {/* Decorative gold glow */}
+      <div
+        className="absolute -top-24 -right-24 w-72 h-72 rounded-full pointer-events-none opacity-60 group-hover:opacity-90 transition-opacity duration-700"
+        style={{ background: "radial-gradient(circle, hsl(var(--accent)/0.25) 0%, transparent 65%)" }}
+      />
+      <div className="absolute inset-0 islamic-pattern opacity-[0.07] pointer-events-none" />
+
+      <div className="relative flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent/30 to-primary/20 flex items-center justify-center shadow-inner">
+            <Sunrise className="w-5 h-5 text-accent" />
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-accent/80 font-semibold">
+              {language === "ar" ? "اليوم" : "Today"}
+            </p>
+            <h3 className={`font-bold text-foreground leading-tight ${language === "ar" ? "font-arabic text-lg" : "text-base"}`}>
+              {language === "ar" ? "رحلتك الروحية" : "Spiritual Journey"}
+            </h3>
+          </div>
         </div>
-        <button onClick={handleLike} className="flex items-center gap-1 text-muted-foreground hover:text-accent transition-colors">
-          <Heart className={`w-5 h-5 transition-all duration-300 ${liked ? "fill-accent text-accent scale-110" : ""}`} />
-          <span className="text-xs tabular-nums">{likeCount}</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleShare}
+            className="w-9 h-9 rounded-full bg-background/60 hover:bg-accent/15 text-muted-foreground hover:text-accent transition-colors flex items-center justify-center"
+            aria-label="Share"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleLike}
+            className="flex items-center gap-1 px-2.5 h-9 rounded-full bg-background/60 hover:bg-accent/15 text-muted-foreground hover:text-accent transition-colors"
+          >
+            <Heart className={`w-4 h-4 transition-all duration-300 ${liked ? "fill-accent text-accent scale-110" : ""}`} />
+            <span className="text-xs tabular-nums font-medium">{likeCount}</span>
+          </button>
+        </div>
       </div>
 
       {/* Verse */}
-      <div className="bg-background rounded-xl p-4 border-l-4 border-accent">
-        <p className="font-arabic text-lg text-foreground leading-relaxed text-right mb-2">
+      <div className="relative bg-background/70 backdrop-blur rounded-2xl p-5 border border-accent/20 shadow-sm">
+        <Sparkles className="absolute top-3 right-3 w-4 h-4 text-accent/40" />
+        <p className="font-arabic text-2xl sm:text-3xl text-foreground leading-loose text-right mb-3 tracking-wide">
           {daily.verse.ar}
         </p>
-        <p className="text-sm text-muted-foreground italic">{daily.verse.en}</p>
-        <div className="flex items-center gap-1 mt-2">
-          <BookOpen className="w-3 h-3 text-accent" />
-          <span className="text-xs text-accent font-medium">{daily.reference}</span>
+        <div className="h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-3" />
+        <p className="text-sm sm:text-base text-foreground/80 italic leading-relaxed">"{daily.verse.en}"</p>
+        <div className="flex items-center gap-1.5 mt-3">
+          <BookOpen className="w-3.5 h-3.5 text-accent" />
+          <span className="text-xs text-accent font-semibold tracking-wide">{daily.reference}</span>
         </div>
       </div>
 
       {/* Hadith */}
-      <div className="bg-background rounded-xl p-4 border-l-4 border-primary">
-        <p className="font-arabic text-base text-foreground leading-relaxed text-right mb-2">
+      <div className="relative bg-background/70 backdrop-blur rounded-2xl p-5 border border-primary/20 shadow-sm mt-4">
+        <span className="absolute -top-2.5 left-4 text-[10px] uppercase tracking-[0.18em] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-semibold">
+          {language === "ar" ? "حديث" : "Hadith"}
+        </span>
+        <p className="font-arabic text-lg text-foreground leading-loose text-right mb-2">
           {daily.hadith.ar}
         </p>
-        <p className="text-sm text-muted-foreground italic">{daily.hadith.en}</p>
-        <div className="flex items-center gap-1 mt-2">
-          <BookOpen className="w-3 h-3 text-primary" />
-          <span className="text-xs text-primary font-medium">{daily.hadithRef}</span>
+        <p className="text-sm text-foreground/75 italic">"{daily.hadith.en}"</p>
+        <div className="flex items-center gap-1.5 mt-2.5">
+          <BookOpen className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs text-primary font-semibold">{daily.hadithRef}</span>
         </div>
       </div>
 
       {/* Extra dynamic verse */}
-      <div className="bg-background rounded-xl p-3 border-l-4 border-muted">
-        <p className="font-arabic text-sm text-foreground leading-relaxed text-right mb-1">
+      <div className="relative bg-background/40 rounded-2xl p-4 border border-border/50 mt-4">
+        <p className="font-arabic text-base text-foreground/90 leading-loose text-right mb-1">
           {extraVerse.ar}
         </p>
-        <p className="text-xs text-muted-foreground italic">{extraVerse.en}</p>
-        <span className="text-[10px] text-muted-foreground">{extraVerse.ref}</span>
+        <p className="text-xs text-muted-foreground italic">"{extraVerse.en}"</p>
+        <span className="text-[10px] text-muted-foreground/80 font-medium">{extraVerse.ref}</span>
       </div>
 
       {/* Reflection */}
-      <div className="bg-primary/5 rounded-xl p-4">
-        <p className={`text-sm text-foreground ${language === "ar" ? "font-arabic text-right" : ""}`}>
-          💭 {daily.reflection[language]}
+      <div className="relative bg-gradient-to-br from-accent/10 via-primary/5 to-transparent rounded-2xl p-5 border border-accent/15 mt-4">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">
+          {language === "ar" ? "تأمل" : "Reflection"}
+        </p>
+        <p className={`text-sm sm:text-base text-foreground leading-relaxed ${language === "ar" ? "font-arabic text-right" : ""}`}>
+          {daily.reflection[language]}
         </p>
       </div>
     </div>
