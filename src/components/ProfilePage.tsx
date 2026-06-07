@@ -16,7 +16,6 @@ interface ProfileRow {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
-  email: string | null;
   created_at: string;
 }
 
@@ -72,7 +71,11 @@ const ProfilePage = ({ onBack }: Props) => {
     setLoading(true);
     try {
       const [{ data: p }, { data: s }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("id,display_name,avatar_url,bio,created_at")
+          .eq("id", user.id)
+          .maybeSingle(),
         supabase.from("user_stats").select("*").eq("user_id", user.id).maybeSingle(),
       ]);
 
@@ -85,7 +88,7 @@ const ProfilePage = ({ onBack }: Props) => {
             display_name: (user.user_metadata as any)?.full_name || user.email,
             email: user.email,
           })
-          .select()
+          .select("id,display_name,avatar_url,bio,created_at")
           .maybeSingle();
         row = inserted as ProfileRow | null;
       }
