@@ -29,7 +29,7 @@ const AdminPanel = ({ onBack }: Props) => {
     if (!isAdmin) return;
     setLoading(true);
     Promise.all([
-      (supabase as any).from("profiles").select("*").order("created_at", { ascending: false }).limit(500),
+      (supabase as any).from("profiles").select("id,display_name,avatar_url,preferred_language,created_at").order("created_at", { ascending: false }).limit(500),
       (supabase as any).from("user_roles").select("user_id, role"),
       (supabase as any).from("user_events").select("*").order("created_at", { ascending: false }).limit(200),
     ]).then(([p, r, e]: any[]) => {
