@@ -431,6 +431,10 @@ export type Database = {
           invite_code: string
         }[]
       }
+      ensure_user_records: {
+        Args: { _display_name?: string }
+        Returns: undefined
+      }
       generate_invite_code: { Args: never; Returns: string }
       get_circle_invite_code: { Args: { _circle_id: string }; Returns: string }
       get_my_email: { Args: never; Returns: string }
