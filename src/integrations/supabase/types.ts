@@ -425,6 +425,8 @@ export type Database = {
     }
     Functions: {
       generate_invite_code: { Args: never; Returns: string }
+      get_circle_invite_code: { Args: { _circle_id: string }; Returns: string }
+      get_my_email: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
