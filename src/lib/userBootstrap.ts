@@ -14,22 +14,11 @@ export const ensureUserRecord = async (user: User | null) => {
     "Al-Bayan user";
 
   try {
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .upsert(
-        {
-          id: user.id,
-          display_name: displayName,
-          email: user.email ?? null,
-        },
-        { onConflict: "id" },
-      );
+    const { error: profileError } = await (supabase as any).rpc("ensure_user_records", {
+      _display_name: displayName,
+    });
 
     if (profileError) throw profileError;
-
-    await supabase
-      .from("user_stats")
-      .upsert({ user_id: user.id }, { onConflict: "user_id" });
 
     bootstrapped.add(user.id);
     track("auth_success", { method: "user_bootstrap" });
