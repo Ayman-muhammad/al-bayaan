@@ -156,7 +156,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
-          invite_code: string
+          invite_code: string | null
           max_members: number
           name: string
           updated_at: string
@@ -166,7 +166,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
-          invite_code: string
+          invite_code?: string | null
           max_members?: number
           name: string
           updated_at?: string
@@ -176,7 +176,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
-          invite_code?: string
+          invite_code?: string | null
           max_members?: number
           name?: string
           updated_at?: string
@@ -424,6 +424,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_family_circle: {
+        Args: { _max_members?: number; _name: string }
+        Returns: {
+          circle_id: string
+          invite_code: string
+        }[]
+      }
       generate_invite_code: { Args: never; Returns: string }
       get_circle_invite_code: { Args: { _circle_id: string }; Returns: string }
       get_my_email: { Args: never; Returns: string }
