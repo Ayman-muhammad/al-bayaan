@@ -559,6 +559,10 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
         )}
 
         <div className="pt-4 border-t border-border">
+          <FamilyGoalsPanel circleId={circleId} isAdmin={isAdmin} />
+        </div>
+
+        <div className="pt-4 border-t border-border">
           <Button onClick={leave} variant="ghost" className="text-destructive hover:text-destructive">
             <Trash2 className="w-4 h-4 mr-2" />Leave circle
           </Button>
