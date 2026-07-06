@@ -11,6 +11,7 @@ import {
   ArrowLeft, Users, Plus, LogIn as LogInIcon, Share2, Copy, Crown,
   Target, CheckCircle2, Circle, AlertCircle, RotateCcw, Trash2,
 } from "lucide-react";
+import FamilyGoalsPanel from "./FamilyGoalsPanel";
 
 type Circle = {
   id: string; name: string; invite_code: string; created_by: string;
