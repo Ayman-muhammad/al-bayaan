@@ -11,6 +11,7 @@ import {
   ArrowLeft, Users, Plus, LogIn as LogInIcon, Share2, Copy, Crown,
   Target, CheckCircle2, Circle, AlertCircle, RotateCcw, Trash2,
 } from "lucide-react";
+import FamilyGoalsPanel from "./FamilyGoalsPanel";
 
 type Circle = {
   id: string; name: string; invite_code: string; created_by: string;
@@ -556,6 +557,10 @@ function CircleDashboard({ circleId, onBack, onNewGoal, onLeft }: {
             )}
           </>
         )}
+
+        <div className="pt-4 border-t border-border">
+          <FamilyGoalsPanel circleId={circleId} isAdmin={isAdmin} />
+        </div>
 
         <div className="pt-4 border-t border-border">
           <Button onClick={leave} variant="ghost" className="text-destructive hover:text-destructive">

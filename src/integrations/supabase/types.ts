@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          code: string
+          description: string | null
+          id: string
+          metadata: Json
+          title: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          title: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          title?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           content: Json
@@ -182,6 +212,101 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      family_goal_contributions: {
+        Row: {
+          amount: number
+          circle_id: string
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          circle_id: string
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          circle_id?: string
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_goal_contributions_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "family_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_goals: {
+        Row: {
+          circle_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          deadline: string
+          goal_type: string
+          id: string
+          target_amount: number
+          title: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          circle_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          deadline: string
+          goal_type: string
+          id?: string
+          target_amount: number
+          title: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          circle_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deadline?: string
+          goal_type?: string
+          id?: string
+          target_amount?: number
+          title?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_goals_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals: {
         Row: {
@@ -437,6 +562,16 @@ export type Database = {
       }
       generate_invite_code: { Args: never; Returns: string }
       get_circle_invite_code: { Args: { _circle_id: string }; Returns: string }
+      get_family_leaderboard: {
+        Args: { _circle_id: string }
+        Returns: {
+          avatar_url: string
+          contributions: number
+          display_name: string
+          total_amount: number
+          user_id: string
+        }[]
+      }
       get_my_email: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -454,6 +589,16 @@ export type Database = {
         Returns: boolean
       }
       join_circle_by_code: { Args: { _code: string }; Returns: string }
+      unlock_achievement: {
+        Args: {
+          _code: string
+          _description?: string
+          _metadata?: Json
+          _title: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
