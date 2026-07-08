@@ -8,6 +8,7 @@ import MadhabToggle from "@/components/MadhabToggle";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
 import { addBookmark } from "@/lib/bookmarks";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -78,11 +79,22 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     let assistantContent = "";
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({
+          title: language === "ar" ? "الرجاء تسجيل الدخول" : "Please sign in",
+          description: language === "ar" ? "يجب تسجيل الدخول لاستخدام الدردشة" : "You must be signed in to use the chat.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({
           messages: updatedMessages
