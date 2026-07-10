@@ -4,8 +4,8 @@
   "description": "Read the Mushaf with tajweed, memorize with Hafiz Mode, listen live from Makkah & Madinah, and track your spiritual journey.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f4ef",
-  "theme_color": "#0D4D3D",
+  "background_color": "#F5F0E8",
+  "theme_color": "#0D4F3C",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
