@@ -62,6 +62,8 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تأملاتك ومعالمك" : "Reflections & milestones", action: () => onNavigate("journey") },
     { img: iconDhikr, label: isAr ? "اليوميات الصوتية" : "Voice Journal", desc: isAr ? "سجّل تأملاتك" : "Record reflections", action: () => onNavigate("voice") },
     { img: iconMadhab, label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "قارن المذاهب الأربعة" : "Compare 4 schools", action: () => onNavigate("chat") },
+    { img: iconScholars, label: isAr ? "تعلّم العربية" : "Arabic Course", desc: isAr ? "افهم لغة القرآن" : "Understand the Qur'an", action: () => onNavigate("arabic") },
+    { img: iconFamily, label: isAr ? "مرحباً بك في الإسلام" : "New to Islam", desc: isAr ? "دليل مبسّط للمهتدين" : "Gentle revert guide", action: () => onNavigate("revert") },
   ];
 
   const slide = HERO_SLIDES[currentSlide];

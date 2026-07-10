@@ -24,8 +24,10 @@ import { useFeedback } from "@/components/FeedbackToast";
 import { armChimeOnFirstInteraction, requestNotifPermission } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
+import ArabicCourse from "@/components/ArabicCourse";
+import RevertSection from "@/components/RevertSection";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family" | "arabic" | "revert";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -119,6 +121,8 @@ const Index = () => {
         {currentView === "admin" && <AdminPanel onBack={() => setCurrentView("home")} />}
         {currentView === "profile" && <ProfilePage onBack={() => setCurrentView("home")} />}
         {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
+        {currentView === "arabic" && <ArabicCourse onBack={() => setCurrentView("home")} />}
+        {currentView === "revert" && <RevertSection onBack={() => setCurrentView("home")} />}
         {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
       </div>
 
