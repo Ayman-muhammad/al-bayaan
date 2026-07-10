@@ -50,6 +50,13 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
     setOpen(false);
   }, [currentView]);
 
+  // Allow other components (e.g. BottomNav's "More" tab) to open this drawer.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("al-bayani:open-menu", handler);
+    return () => window.removeEventListener("al-bayani:open-menu", handler);
+  }, []);
+
   const isAr = language === "ar";
 
   const primaryLinks = [
