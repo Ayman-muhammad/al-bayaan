@@ -23,6 +23,7 @@ import AuthPage from "@/pages/Auth";
 import { useFeedback } from "@/components/FeedbackToast";
 import { armChimeOnFirstInteraction, requestNotifPermission } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
+import BottomNav from "@/components/BottomNav";
 
 type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family";
 
@@ -91,34 +92,43 @@ const Index = () => {
         <WelcomeOverlay onComplete={() => setShowWelcome(false)} />
       )}
 
-      {currentView === "home" && (
-        <>
-          <Navbar currentView={currentView} onNavigate={handleNavigate} />
-          <div className="pt-14">
-            <HeroSection onStartChat={() => handleNavigate("chat")} onNavigate={handleNavigate} />
-          </div>
-          <ReminderNudge onAct={() => handleNavigate("hafiz")} />
-        </>
-      )}
+      {/* Navbar is always mounted so the side drawer is reachable from any view. */}
+      <Navbar currentView={currentView} onNavigate={handleNavigate} />
 
-      {currentView === "chat" && <ChatInterface onBack={() => setCurrentView("home")} />}
-      {currentView === "audio" && <AudioLibrary onBack={() => setCurrentView("home")} />}
-      {currentView === "quran" && <QuranReader onBack={() => setCurrentView("home")} />}
-      {currentView === "prayer" && <PrayerTimes onBack={() => setCurrentView("home")} />}
-      {currentView === "hafiz" && <HafizMode onBack={() => setCurrentView("home")} />}
-      {currentView === "dhikr" && <DhikrPage onBack={() => setCurrentView("home")} />}
-      {currentView === "scholars" && <ScholarsQA onBack={() => setCurrentView("home")} />}
-      {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
-      {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
-      {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
-      {currentView === "journeys" && <Journeys onBack={() => setCurrentView("home")} />}
-      {currentView === "voice" && <VoiceJournal onBack={() => setCurrentView("home")} />}
-      {currentView === "admin" && <AdminPanel onBack={() => setCurrentView("home")} />}
-      {currentView === "profile" && <ProfilePage onBack={() => setCurrentView("home")} />}
-      {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
-      {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
+      {/* Padding accounts for fixed top navbar + bottom tab bar on mobile. */}
+      <div className="pt-14 pb-20 md:pb-0">
+        {currentView === "home" && (
+          <>
+            <HeroSection onStartChat={() => handleNavigate("chat")} onNavigate={handleNavigate} />
+            <ReminderNudge onAct={() => handleNavigate("hafiz")} />
+          </>
+        )}
+
+        {currentView === "chat" && <ChatInterface onBack={() => setCurrentView("home")} />}
+        {currentView === "audio" && <AudioLibrary onBack={() => setCurrentView("home")} />}
+        {currentView === "quran" && <QuranReader onBack={() => setCurrentView("home")} />}
+        {currentView === "prayer" && <PrayerTimes onBack={() => setCurrentView("home")} />}
+        {currentView === "hafiz" && <HafizMode onBack={() => setCurrentView("home")} />}
+        {currentView === "dhikr" && <DhikrPage onBack={() => setCurrentView("home")} />}
+        {currentView === "scholars" && <ScholarsQA onBack={() => setCurrentView("home")} />}
+        {currentView === "favorites" && <FavoritesHub onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+        {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+        {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+        {currentView === "journeys" && <Journeys onBack={() => setCurrentView("home")} />}
+        {currentView === "voice" && <VoiceJournal onBack={() => setCurrentView("home")} />}
+        {currentView === "admin" && <AdminPanel onBack={() => setCurrentView("home")} />}
+        {currentView === "profile" && <ProfilePage onBack={() => setCurrentView("home")} />}
+        {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
+        {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
+      </div>
 
       <InstallPrompt />
+
+      <BottomNav
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onOpenMenu={() => window.dispatchEvent(new CustomEvent("al-bayani:open-menu"))}
+      />
     </div>
   );
 };
