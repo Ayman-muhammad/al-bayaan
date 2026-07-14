@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Quote, GraduationCap, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
 import DailyVerse from "@/components/DailyVerse";
 import LiveStreamSection from "@/components/LiveStreamSection";
+import HomePrayerWidget from "@/components/HomePrayerWidget";
 import kaabaImg from "@/assets/kaaba-hero.jpg";
 import medinaImg from "@/assets/medina-mosque.jpg";
 import quranImg from "@/assets/quran-open.jpg";
@@ -52,6 +53,7 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
     { img: iconFamily, label: isAr ? "حلقة العائلة" : "Family Circle", desc: isAr ? "احفظوا معاً" : "Memorize together", action: () => onNavigate("family") },
     { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
+    { img: iconQuran, label: isAr ? "التحميلات" : "Downloads", desc: isAr ? "احفظ للسماع دون اتصال" : "Save for offline", action: () => onNavigate("downloads") },
     { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
     { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
     { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
@@ -178,6 +180,13 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
               <ChevronRight className="w-4 h-4 text-foreground" />
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Prayer countdown widget */}
+      <section className="px-3 sm:px-4 -mt-4 relative z-10">
+        <div className="max-w-3xl mx-auto">
+          <HomePrayerWidget onOpen={() => onNavigate("prayer")} />
         </div>
       </section>
 
