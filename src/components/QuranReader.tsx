@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,6 +74,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
   const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
+  // Per-surah reciter + playback controls
+  const RECITERS = [
+    { id: "Alafasy_128kbps", name: "Mishary Alafasy" },
+    { id: "Husary_128kbps", name: "Mahmoud Al-Husary" },
+    { id: "Abdul_Basit_Murattal_192kbps", name: "Abdul Basit" },
+    { id: "Minshawy_Murattal_128kbps", name: "Al-Minshawi" },
+    { id: "Saood_ash-Shuraym_128kbps", name: "Saud Ash-Shuraim" },
+    { id: "Sudais_128kbps", name: "Abdur-Rahman As-Sudais" },
+  ];
+  const [reciterId, setReciterId] = useState<string>(() => localStorage.getItem("al-bayan-reciter") || "Alafasy_128kbps");
+  useEffect(() => { localStorage.setItem("al-bayan-reciter", reciterId); }, [reciterId]);
   const [tadabburOpen, setTadabburOpen] = useState<Record<number, boolean>>({});
   const [wordsByAyah, setWordsByAyah] = useState<Record<number, { ar: string; en: string }[]>>({});
   const [loadingWords, setLoadingWords] = useState(false);
@@ -121,11 +132,11 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     return out.slice(0, 4);
   };
 
-  // Per-ayah audio (Mishary Alafasy via everyayah CDN)
+  // Per-ayah audio via everyayah CDN; reciter is user-selectable.
   const buildAyahAudioUrl = (surahId: number, ayahNumberInSurah: number) => {
     const s = String(surahId).padStart(3, "0");
     const a = String(ayahNumberInSurah).padStart(3, "0");
-    return `https://everyayah.com/data/Alafasy_128kbps/${s}${a}.mp3`;
+    return `https://everyayah.com/data/${reciterId}/${s}${a}.mp3`;
   };
 
   const playAyah = (surahId: number, ayahNumberInSurah: number, globalNumber: number) => {
