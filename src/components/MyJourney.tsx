@@ -8,6 +8,7 @@ import {
   ArrowLeft, Trophy, Target, Flame, BookOpen, BarChart3,
   Calendar, TrendingUp, Star, Zap
 } from "lucide-react";
+import DailyChallenges from "@/components/DailyChallenges";
 
 interface MyJourneyProps {
   onBack: () => void;
@@ -234,6 +235,30 @@ const MyJourney = ({ onBack, onNavigate }: MyJourneyProps) => {
                 </div>
               ))}
             </div>
+
+            {/* Daily challenges + badges */}
+            <DailyChallenges
+              stats={{
+                ayahsToday: (() => {
+                  const today = new Date().toISOString().slice(0, 10);
+                  const r = readProgress.filter((x) => (x.updated_at || "").slice(0, 10) === today).length;
+                  const m = memProgress.filter((x) => (x.last_practiced || "").slice(0, 10) === today).length;
+                  return r + m;
+                })(),
+                listenedMinutesToday: Number(localStorage.getItem("al-bayan-listen-min-" + new Date().toISOString().slice(0, 10)) || 0),
+                reflectionsToday: (() => {
+                  try {
+                    const raw = localStorage.getItem("al-bayan-reflections") || "[]";
+                    const arr = JSON.parse(raw);
+                    const today = new Date().toISOString().slice(0, 10);
+                    return arr.filter((x: any) => (x.date || "").slice(0, 10) === today).length;
+                  } catch { return 0; }
+                })(),
+                streak,
+                totalMastered,
+                surahsRead: surahs_read,
+              }}
+            />
 
             {/* Heatmap */}
             <div className="bg-card border border-border rounded-xl p-4 space-y-3 animate-slide-up" style={{ animationDelay: "300ms", animationFillMode: "both" }}>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,6 +74,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
   const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
+  // Per-surah reciter + playback controls
+  const RECITERS = [
+    { id: "Alafasy_128kbps", name: "Mishary Alafasy" },
+    { id: "Husary_128kbps", name: "Mahmoud Al-Husary" },
+    { id: "Abdul_Basit_Murattal_192kbps", name: "Abdul Basit" },
+    { id: "Minshawy_Murattal_128kbps", name: "Al-Minshawi" },
+    { id: "Saood_ash-Shuraym_128kbps", name: "Saud Ash-Shuraim" },
+    { id: "Sudais_128kbps", name: "Abdur-Rahman As-Sudais" },
+  ];
+  const [reciterId, setReciterId] = useState<string>(() => localStorage.getItem("al-bayan-reciter") || "Alafasy_128kbps");
+  useEffect(() => { localStorage.setItem("al-bayan-reciter", reciterId); }, [reciterId]);
   const [tadabburOpen, setTadabburOpen] = useState<Record<number, boolean>>({});
   const [wordsByAyah, setWordsByAyah] = useState<Record<number, { ar: string; en: string }[]>>({});
   const [loadingWords, setLoadingWords] = useState(false);
@@ -121,11 +132,11 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     return out.slice(0, 4);
   };
 
-  // Per-ayah audio (Mishary Alafasy via everyayah CDN)
+  // Per-ayah audio via everyayah CDN; reciter is user-selectable.
   const buildAyahAudioUrl = (surahId: number, ayahNumberInSurah: number) => {
     const s = String(surahId).padStart(3, "0");
     const a = String(ayahNumberInSurah).padStart(3, "0");
-    return `https://everyayah.com/data/Alafasy_128kbps/${s}${a}.mp3`;
+    return `https://everyayah.com/data/${reciterId}/${s}${a}.mp3`;
   };
 
   const playAyah = (surahId: number, ayahNumberInSurah: number, globalNumber: number) => {
@@ -527,6 +538,41 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                 <Loader2 className="w-3 h-3 animate-spin" /> {isAr ? "جاري التحميل" : "Loading"}
               </span>
             )}
+          </div>
+
+          {/* Reciter + speed + repeat */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
+            <Mic2 className="w-4 h-4 text-primary shrink-0" />
+            <select
+              value={reciterId}
+              onChange={(e) => setReciterId(e.target.value)}
+              className="text-[11px] sm:text-xs bg-muted text-foreground rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {RECITERS.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <div className="inline-flex items-center gap-1 ml-1">
+              <Gauge className="w-3.5 h-3.5 text-muted-foreground" />
+              {[0.75, 1, 1.25, 1.5].map((rate) => (
+                <button
+                  key={rate}
+                  onClick={() => player.setPlaybackRate(rate)}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium ${
+                    player.playbackRate === rate ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >{rate}×</button>
+              ))}
+            </div>
+            <button
+              onClick={() => player.setRepeat(!player.repeat)}
+              className={`ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium ${
+                player.repeat ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+              title={isAr ? "تكرار" : "Repeat"}
+            >
+              <Repeat className="w-3.5 h-3.5" /> {isAr ? "تكرار" : "Repeat"}
+            </button>
           </div>
 
           {loading ? (
