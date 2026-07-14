@@ -26,8 +26,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
 import ArabicCourse from "@/components/ArabicCourse";
 import RevertSection from "@/components/RevertSection";
+import DownloadManager from "@/components/DownloadManager";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family" | "arabic" | "revert";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family" | "arabic" | "revert" | "downloads";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -123,6 +124,7 @@ const Index = () => {
         {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
         {currentView === "arabic" && <ArabicCourse onBack={() => setCurrentView("home")} />}
         {currentView === "revert" && <RevertSection onBack={() => setCurrentView("home")} />}
+        {currentView === "downloads" && <DownloadManager onBack={() => setCurrentView("home")} />}
         {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
       </div>
 
