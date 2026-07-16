@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import {
-  ArrowLeft, CheckCircle2, Volume2, Sparkles, Heart, Flame, Star,
-  Lock, Trophy, X, Check,
+  ArrowLeft, Volume2, Sparkles, Heart, Flame, Star,
+  Lock, Trophy, X, Check, BookOpen, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -20,7 +20,7 @@ type Unit = {
   id: string;
   titleAr: string;
   titleEn: string;
-  color: string; // tailwind gradient tail (from/to)
+  color: string; // from-... to-...
   lessons: Lesson[];
 };
 
