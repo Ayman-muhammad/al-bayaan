@@ -36,6 +36,7 @@ const UNITS: Unit[] = [
     id: "alphabet",
     titleAr: "الحروف الهجائية",
     titleEn: "The Arabic Alphabet",
+    color: "from-emerald-500 to-teal-600",
     lessons: [
       { id: "a1", ar: "ا ب ت ث", translit: "alif · ba · ta · tha", en: "First 4 letters" },
       { id: "a2", ar: "ج ح خ", translit: "jeem · ḥa · kha", en: "Throat letters — group 1" },
@@ -50,6 +51,7 @@ const UNITS: Unit[] = [
     id: "harakat",
     titleAr: "الحركات",
     titleEn: "Short Vowels (Harakāt)",
+    color: "from-amber-500 to-orange-600",
     lessons: [
       { id: "h1", ar: "بَ بِ بُ", translit: "ba · bi · bu", en: "Fatḥa, Kasra, Ḍamma on ب" },
       { id: "h2", ar: "بً بٍ بٌ", translit: "ban · bin · bun", en: "Tanwīn — the 'n' sound" },
@@ -61,6 +63,7 @@ const UNITS: Unit[] = [
     id: "words",
     titleAr: "كلمات من القرآن",
     titleEn: "Common Qur'anic Words",
+    color: "from-sky-500 to-indigo-600",
     lessons: [
       { id: "w1", ar: "اللَّه", translit: "Allāh", en: "God — the One" },
       { id: "w2", ar: "الرَّحْمَٰن", translit: "Ar-Raḥmān", en: "The Most Merciful" },
@@ -78,6 +81,7 @@ const UNITS: Unit[] = [
     id: "fatiha",
     titleAr: "فهم سورة الفاتحة",
     titleEn: "Understand Al-Fātiḥa",
+    color: "from-fuchsia-500 to-rose-600",
     lessons: [
       { id: "f1", ar: "بِسْمِ اللَّهِ", translit: "Bismillāh", en: "In the name of Allah" },
       { id: "f2", ar: "الْحَمْدُ لِلَّهِ", translit: "Al-ḥamdu lillāh", en: "All praise is for Allah" },
