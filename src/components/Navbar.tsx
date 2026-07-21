@@ -30,6 +30,7 @@ import {
   Shield,
   UserCircle2,
   Heart,
+  Sunrise,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsAdmin } from "@/lib/useIsAdmin";
@@ -69,12 +70,13 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
   const secondaryLinks = [
     { id: "audio", icon: Headphones, labelAr: "الاستماع", labelEn: "Listen" },
     { id: "chat", icon: MessageCircle, labelAr: "اسأل", labelEn: "Ask AI" },
-    { id: "family", icon: Heart, labelAr: "حلقة العائلة", labelEn: "Family Circle" },
+    { id: "cycle", icon: Heart, labelAr: "دورة العائلة", labelEn: "Family Cycle" },
+    { id: "family", icon: Heart, labelAr: "حلقة الحفظ", labelEn: "Hifdh Circle" },
+    { id: "adhkar", icon: Sunrise, labelAr: "الأذكار", labelEn: "Adhkar" },
     { id: "scholars", icon: Users, labelAr: "علماء", labelEn: "Scholars" },
     { id: "dhikr", icon: Sparkles, labelAr: "الأذكار والأدعية", labelEn: "Dhikr & Dua" },
     { id: "dashboard", icon: LayoutDashboard, labelAr: "لوحة التقدم", labelEn: "Dashboard" },
     { id: "journeys", icon: SparklesIcon, labelAr: "رحلة 30 يوم", labelEn: "30-Day Journey" },
-    { id: "voice", icon: Mic, labelAr: "يوميات صوتية", labelEn: "Voice Journal" },
     { id: "journey", icon: TrendingUp, labelAr: "رحلتي", labelEn: "My Journey" },
     { id: "favorites", icon: Bookmark, labelAr: "المفضلة", labelEn: "Favorites" },
     { id: "auth", icon: LogIn, labelAr: "حساب", labelEn: "Sign In" },
