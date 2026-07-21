@@ -44,6 +44,75 @@ export type Database = {
         }
         Relationships: []
       }
+      answers: {
+        Row: {
+          answer_text: string
+          created_at: string
+          helpful_count: number
+          id: string
+          languages: Json
+          question_id: string
+          scholar_avatar: string | null
+          scholar_id: string | null
+          scholar_name: string
+          source_book: string | null
+          source_page: string | null
+          source_publisher: string | null
+          source_url: string | null
+          source_volume: string | null
+          source_year: string | null
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          languages?: Json
+          question_id: string
+          scholar_avatar?: string | null
+          scholar_id?: string | null
+          scholar_name: string
+          source_book?: string | null
+          source_page?: string | null
+          source_publisher?: string | null
+          source_url?: string | null
+          source_volume?: string | null
+          source_year?: string | null
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          languages?: Json
+          question_id?: string
+          scholar_avatar?: string | null
+          scholar_id?: string | null
+          scholar_name?: string
+          source_book?: string | null
+          source_page?: string | null
+          source_publisher?: string | null
+          source_url?: string | null
+          source_volume?: string | null
+          source_year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_scholar_id_fkey"
+            columns: ["scholar_id"]
+            isOneToOne: false
+            referencedRelation: "scholars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookmarks: {
         Row: {
           content: Json
@@ -213,6 +282,169 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_activities: {
+        Row: {
+          activity_type: string
+          assigned_members: string[]
+          created_at: string
+          cycle_id: string
+          description: string | null
+          dhikr_target: number | null
+          end_ayah: number | null
+          id: string
+          start_ayah: number | null
+          surah_number: number | null
+          time_slot: string
+          title: string
+        }
+        Insert: {
+          activity_type: string
+          assigned_members?: string[]
+          created_at?: string
+          cycle_id: string
+          description?: string | null
+          dhikr_target?: number | null
+          end_ayah?: number | null
+          id?: string
+          start_ayah?: number | null
+          surah_number?: number | null
+          time_slot: string
+          title: string
+        }
+        Update: {
+          activity_type?: string
+          assigned_members?: string[]
+          created_at?: string
+          cycle_id?: string
+          description?: string | null
+          dhikr_target?: number | null
+          end_ayah?: number | null
+          id?: string
+          start_ayah?: number | null
+          surah_number?: number | null
+          time_slot?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_activities_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "family_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cycle_checkins: {
+        Row: {
+          checkin_date: string
+          cycle_id: string
+          evening_complete: boolean
+          id: string
+          morning_complete: boolean
+          streak_count: number
+        }
+        Insert: {
+          checkin_date: string
+          cycle_id: string
+          evening_complete?: boolean
+          id?: string
+          morning_complete?: boolean
+          streak_count?: number
+        }
+        Update: {
+          checkin_date?: string
+          cycle_id?: string
+          evening_complete?: boolean
+          id?: string
+          morning_complete?: boolean
+          streak_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_checkins_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "family_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cycle_completions: {
+        Row: {
+          activity_id: string
+          completed_at: string
+          completed_by: string | null
+          completion_date: string
+          id: string
+          member_id: string | null
+        }
+        Insert: {
+          activity_id: string
+          completed_at?: string
+          completed_by?: string | null
+          completion_date?: string
+          id?: string
+          member_id?: string | null
+        }
+        Update: {
+          activity_id?: string
+          completed_at?: string
+          completed_by?: string | null
+          completion_date?: string
+          id?: string
+          member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycle_completions_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "cycle_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycle_completions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_cycles: {
+        Row: {
+          created_at: string
+          duration_days: number
+          id: string
+          intention: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days?: number
+          id?: string
+          intention: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          id?: string
+          intention?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       family_goal_contributions: {
         Row: {
           amount: number
@@ -308,6 +540,83 @@ export type Database = {
           },
         ]
       }
+      family_members: {
+        Row: {
+          avatar_emoji: string
+          color: string
+          created_at: string
+          cycle_id: string
+          id: string
+          name: string
+          role: string
+          sort_order: number
+        }
+        Insert: {
+          avatar_emoji?: string
+          color?: string
+          created_at?: string
+          cycle_id: string
+          id?: string
+          name: string
+          role: string
+          sort_order?: number
+        }
+        Update: {
+          avatar_emoji?: string
+          color?: string
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          name?: string
+          role?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "family_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_reminders: {
+        Row: {
+          days: string
+          evening_enabled: boolean
+          evening_offset_minutes: number
+          id: string
+          morning_enabled: boolean
+          morning_offset_minutes: number
+          sound: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          days?: string
+          evening_enabled?: boolean
+          evening_offset_minutes?: number
+          id?: string
+          morning_enabled?: boolean
+          morning_offset_minutes?: number
+          sound?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          days?: string
+          evening_enabled?: boolean
+          evening_offset_minutes?: number
+          id?: string
+          morning_enabled?: boolean
+          morning_offset_minutes?: number
+          sound?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           circle_id: string
@@ -351,6 +660,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hifz_progress: {
+        Row: {
+          ayah_number: number
+          id: string
+          review_due: string | null
+          status: string
+          streak: number
+          surah_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ayah_number: number
+          id?: string
+          review_due?: string | null
+          status?: string
+          streak?: number
+          surah_number: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ayah_number?: number
+          id?: string
+          review_due?: string | null
+          status?: string
+          streak?: number
+          surah_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hifz_sessions: {
+        Row: {
+          ayahs_practiced: number
+          created_at: string
+          id: string
+          score: number | null
+          session_date: string
+          surah_number: number
+          user_id: string
+        }
+        Insert: {
+          ayahs_practiced?: number
+          created_at?: string
+          id?: string
+          score?: number | null
+          session_date?: string
+          surah_number: number
+          user_id: string
+        }
+        Update: {
+          ayahs_practiced?: number
+          created_at?: string
+          id?: string
+          score?: number | null
+          session_date?: string
+          surah_number?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       memorization_progress: {
         Row: {
@@ -427,6 +799,36 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          anonymous: boolean
+          category: string
+          created_at: string
+          id: string
+          question_text: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          anonymous?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          question_text: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          anonymous?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          question_text?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reading_progress: {
         Row: {
           completed: boolean | null
@@ -454,6 +856,39 @@ export type Database = {
         }
         Relationships: []
       }
+      scholars: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          credentials: string
+          id: string
+          is_active: boolean
+          name: string
+          specialization: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credentials: string
+          id?: string
+          is_active?: boolean
+          name: string
+          specialization: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credentials?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          specialization?: string
+        }
+        Relationships: []
+      }
       user_events: {
         Row: {
           created_at: string
@@ -478,6 +913,48 @@ export type Database = {
           meta?: Json
           ua?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_quran_prefs: {
+        Row: {
+          font_family: string
+          font_size_level: number
+          id: string
+          line_spacing: string
+          page_theme: string
+          reciter_name: string
+          show_tafsir: boolean
+          show_translation: boolean
+          updated_at: string
+          user_id: string
+          word_spacing: string
+        }
+        Insert: {
+          font_family?: string
+          font_size_level?: number
+          id?: string
+          line_spacing?: string
+          page_theme?: string
+          reciter_name?: string
+          show_tafsir?: boolean
+          show_translation?: boolean
+          updated_at?: string
+          user_id: string
+          word_spacing?: string
+        }
+        Update: {
+          font_family?: string
+          font_size_level?: number
+          id?: string
+          line_spacing?: string
+          page_theme?: string
+          reciter_name?: string
+          show_tafsir?: boolean
+          show_translation?: boolean
+          updated_at?: string
+          user_id?: string
+          word_spacing?: string
         }
         Relationships: []
       }
