@@ -13,7 +13,6 @@ import ScholarsQA from "@/components/ScholarsQA";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import Dashboard from "@/components/Dashboard";
 import Journeys from "@/components/Journeys";
-import VoiceJournal from "@/components/VoiceJournal";
 import InstallPrompt from "@/components/InstallPrompt";
 import ReminderNudge from "@/components/ReminderNudge";
 import AdminPanel from "@/components/AdminPanel";
@@ -24,11 +23,12 @@ import { useFeedback } from "@/components/FeedbackToast";
 import { armChimeOnFirstInteraction, requestNotifPermission } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
-import ArabicCourse from "@/components/ArabicCourse";
 import RevertSection from "@/components/RevertSection";
 import DownloadManager from "@/components/DownloadManager";
+import Adhkar from "@/components/Adhkar";
+import FamilyCycle from "@/components/FamilyCycle";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "voice" | "admin" | "profile" | "family" | "arabic" | "revert" | "downloads";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "admin" | "profile" | "family" | "cycle" | "revert" | "downloads" | "adhkar";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -118,11 +118,11 @@ const Index = () => {
         {currentView === "journey" && <MyJourney onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
         {currentView === "dashboard" && <Dashboard onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
         {currentView === "journeys" && <Journeys onBack={() => setCurrentView("home")} />}
-        {currentView === "voice" && <VoiceJournal onBack={() => setCurrentView("home")} />}
         {currentView === "admin" && <AdminPanel onBack={() => setCurrentView("home")} />}
         {currentView === "profile" && <ProfilePage onBack={() => setCurrentView("home")} />}
         {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
-        {currentView === "arabic" && <ArabicCourse onBack={() => setCurrentView("home")} />}
+        {currentView === "cycle" && <FamilyCycle onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
+        {currentView === "adhkar" && <Adhkar onBack={() => setCurrentView("home")} />}
         {currentView === "revert" && <RevertSection onBack={() => setCurrentView("home")} />}
         {currentView === "downloads" && <DownloadManager onBack={() => setCurrentView("home")} />}
         {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}

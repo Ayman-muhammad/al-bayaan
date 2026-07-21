@@ -1,4 +1,4 @@
-import { Home, BookOpen, Headphones, TrendingUp, Menu as MenuIcon } from "lucide-react";
+import { Home, BookOpen, Heart, Users, Menu as MenuIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BottomNavProps {
@@ -20,10 +20,10 @@ const BottomNav = ({ currentView, onNavigate, onOpenMenu }: BottomNavProps) => {
   const tabs = [
     { id: "home", icon: Home, ar: "الرئيسية", en: "Home" },
     { id: "quran", icon: BookOpen, ar: "اقرأ", en: "Read" },
-    { id: "audio", icon: Headphones, ar: "استمع", en: "Listen" },
-    { id: "dashboard", icon: TrendingUp, ar: "رحلتي", en: "Journey" },
+    { id: "cycle", icon: Heart, ar: "العائلة", en: "Family", featured: true },
+    { id: "scholars", icon: Users, ar: "علماء", en: "Scholars" },
     { id: "__menu", icon: MenuIcon, ar: "المزيد", en: "More" },
-  ] as const;
+  ] as Array<{ id: string; icon: any; ar: string; en: string; featured?: boolean }>;
 
   const handleTap = (id: string) => {
     if (id === "__menu") return onOpenMenu();
@@ -42,6 +42,7 @@ const BottomNav = ({ currentView, onNavigate, onOpenMenu }: BottomNavProps) => {
           const Icon = t.icon;
           const active = currentView === t.id;
           const label = isAr ? t.ar : t.en;
+          const featured = t.featured;
           return (
             <li key={t.id} className="flex">
               <button
@@ -49,16 +50,18 @@ const BottomNav = ({ currentView, onNavigate, onOpenMenu }: BottomNavProps) => {
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
                 className={`group flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 transition-colors ${
-                  active ? "text-accent" : "text-muted-foreground"
+                  active ? "text-accent" : featured ? "text-accent" : "text-muted-foreground"
                 }`}
               >
                 <span
-                  className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-all ${
-                    active ? "bg-accent/15" : "bg-transparent group-active:bg-muted"
+                  className={`inline-flex items-center justify-center rounded-full transition-all ${
+                    featured
+                      ? `w-12 h-12 -mt-4 shadow-lg ${active ? "bg-gradient-to-br from-primary to-accent text-primary-foreground animate-pulse" : "bg-gradient-to-br from-accent/80 to-primary/80 text-primary-foreground"}`
+                      : `w-10 h-6 ${active ? "bg-accent/15" : "bg-transparent group-active:bg-muted"}`
                   }`}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-transform ${active ? "scale-110" : ""}`}
+                    className={`${featured ? "w-6 h-6" : "w-5 h-5"} transition-transform ${active ? "scale-110" : ""}`}
                     strokeWidth={active ? 2.4 : 1.9}
                   />
                 </span>

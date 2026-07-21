@@ -11,16 +11,16 @@ const STREAMS = [
     label: { ar: "بث مباشر من مكة المكرمة", en: "Live from Makkah" },
     desc: { ar: "المسجد الحرام", en: "Masjid Al-Haram" },
     thumbnail: meccaImg,
-    youtubeId: "bSfIjJPQi1I",
-    externalUrl: "https://www.youtube.com/watch?v=bSfIjJPQi1I",
+    youtubeId: "nwllJOmz3sI",
+    externalUrl: "https://www.youtube.com/watch?v=nwllJOmz3sI",
   },
   {
     id: "medina",
     label: { ar: "بث مباشر من المدينة المنورة", en: "Live from Madinah" },
     desc: { ar: "المسجد النبوي", en: "Masjid An-Nabawi" },
     thumbnail: medinaImg,
-    youtubeId: "P9MBk0BnFOo",
-    externalUrl: "https://www.youtube.com/watch?v=P9MBk0BnFOo",
+    youtubeId: "QYCZzl--IQs",
+    externalUrl: "https://www.youtube.com/watch?v=QYCZzl--IQs",
   },
 ];
 
