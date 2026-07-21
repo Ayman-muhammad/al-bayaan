@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
-import MadhabToggle from "@/components/MadhabToggle";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
 import { addBookmark } from "@/lib/bookmarks";
@@ -36,7 +35,7 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [madhabCompare, setMadhabCompare] = useState(false);
+  const madhabCompare = false;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const showQuickTopics = messages.length <= 1;
@@ -222,7 +221,6 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
             </div>
           </div>
         </div>
-        <MadhabToggle enabled={madhabCompare} onToggle={() => setMadhabCompare(!madhabCompare)} />
       </header>
 
       {/* Messages */}
@@ -282,15 +280,6 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Madhab indicator */}
-      {madhabCompare && (
-        <div className="bg-gold/10 border-t border-gold/20 px-4 py-1.5 text-center">
-          <span className={`text-xs text-accent font-medium ${language === "ar" ? "font-arabic" : ""}`}>
-            ⚖️ {language === "ar" ? "وضع مقارنة المذاهب — ستتم مقارنة الآراء الأربعة" : "Madhab Comparison Mode — All 4 schools will be compared"}
-          </span>
-        </div>
-      )}
 
       {/* Input */}
       <div className="border-t border-border bg-card p-4">
