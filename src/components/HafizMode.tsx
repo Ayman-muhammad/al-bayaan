@@ -70,6 +70,34 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
   const ayahWordsRef = useRef<string[]>([]);
   const seenTokensRef = useRef<Set<string>>(new Set());
 
+  // Word mask (memorization aid): hide random words behind a mask; tap to reveal.
+  const [maskEnabled, setMaskEnabled] = useState(false);
+  const [maskPct, setMaskPct] = useState(30); // 10..70
+  const [maskedIdx, setMaskedIdx] = useState<Set<number>>(new Set());
+  const [revealedIdx, setRevealedIdx] = useState<Set<number>>(new Set());
+
+  // Recompute mask when the ayah or settings change
+  useEffect(() => {
+    if (!maskEnabled) {
+      setMaskedIdx(new Set());
+      setRevealedIdx(new Set());
+      return;
+    }
+    const current = ayahs[currentAyahIndex];
+    if (!current) return;
+    const words = current.text.split(/\s+/).filter(Boolean);
+    const n = words.length;
+    const target = Math.max(1, Math.round((maskPct / 100) * n));
+    const idxs = Array.from({ length: n }, (_, i) => i);
+    // Fisher-Yates
+    for (let i = idxs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+    }
+    setMaskedIdx(new Set(idxs.slice(0, target)));
+    setRevealedIdx(new Set());
+  }, [maskEnabled, maskPct, currentAyahIndex, ayahs]);
+
   // Dashboard
   const [dashboardData, setDashboardData] = useState<any[]>([]);
   const [totalMastered, setTotalMastered] = useState(0);
