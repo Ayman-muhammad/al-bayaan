@@ -27,8 +27,9 @@ import RevertSection from "@/components/RevertSection";
 import DownloadManager from "@/components/DownloadManager";
 import Adhkar from "@/components/Adhkar";
 import FamilyCycle from "@/components/FamilyCycle";
+import MorePage from "@/components/MorePage";
 
-type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "admin" | "profile" | "family" | "cycle" | "revert" | "downloads" | "adhkar";
+type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "admin" | "profile" | "family" | "cycle" | "revert" | "downloads" | "adhkar" | "more";
 
 const FEEDBACK_MAP: Partial<Record<View, string>> = {
   quran: "navigate_quran",
@@ -123,6 +124,7 @@ const Index = () => {
         {currentView === "family" && <FamilyCircle onBack={() => setCurrentView("home")} />}
         {currentView === "cycle" && <FamilyCycle onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
         {currentView === "adhkar" && <Adhkar onBack={() => setCurrentView("home")} />}
+        {currentView === "more" && <MorePage onBack={() => setCurrentView("home")} onNavigate={handleNavigate} />}
         {currentView === "revert" && <RevertSection onBack={() => setCurrentView("home")} />}
         {currentView === "downloads" && <DownloadManager onBack={() => setCurrentView("home")} />}
         {currentView === "auth" && <AuthPage onBack={() => setCurrentView("home")} onSuccess={() => setCurrentView("dashboard")} />}
@@ -133,7 +135,7 @@ const Index = () => {
       <BottomNav
         currentView={currentView}
         onNavigate={handleNavigate}
-        onOpenMenu={() => window.dispatchEvent(new CustomEvent("al-bayani:open-menu"))}
+        onOpenMenu={() => handleNavigate("more")}
       />
     </div>
   );
