@@ -14,7 +14,7 @@ interface Props {
 }
 
 const MorePage = ({ onBack, onNavigate }: Props) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const isAr = language === "ar";
   const { theme, setTheme } = useTheme() as any;
   const { user, signOut } = useAuth();
@@ -183,7 +183,7 @@ const MorePage = ({ onBack, onNavigate }: Props) => {
             icon={Sparkles}
             label={isAr ? "اللغة" : "Language"}
             sub={isAr ? "العربية" : "English"}
-            onClick={() => setLanguage(isAr ? "en" : "ar")}
+            onClick={() => toggleLanguage()}
           />
           <Row icon={Download} label={isAr ? "التنزيلات" : "Downloads"} onClick={() => onNavigate("downloads")} />
         </Section>
