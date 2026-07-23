@@ -1,9 +1,13 @@
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, ChevronRight, BookOpen, Globe2 } from "lucide-react";
+import { ArrowLeft, Search, ChevronRight, BookOpen, Globe2, Plus, Send, Loader2 } from "lucide-react";
 import scholarsIcon from "@/assets/icons/icon-scholars.png";
 import { EXTRA_SCHOLARS, type Scholar as ExtraScholar } from "@/data/scholarsQA";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScholarsQAProps {
   onBack: () => void;
