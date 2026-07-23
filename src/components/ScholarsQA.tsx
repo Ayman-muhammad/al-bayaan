@@ -406,6 +406,82 @@ const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
           </div>
         </div>
       )}
+
+      {/* Ask FAB */}
+      <button
+        onClick={() => setAskOpen(true)}
+        aria-label={isAr ? "اسأل سؤالاً" : "Ask a question"}
+        className="fixed bottom-24 md:bottom-6 right-4 z-30 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <Dialog open={askOpen} onOpenChange={setAskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className={isAr ? "font-arabic" : ""}>
+              {isAr ? "اسأل عالماً" : "Ask a scholar"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "الموضوع" : "Category"}
+              </label>
+              <select
+                value={askCategory}
+                onChange={(e) => setAskCategory(e.target.value)}
+                className="mt-1 w-full bg-background border border-border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="general">{isAr ? "عام" : "General"}</option>
+                <option value="aqeedah">{isAr ? "العقيدة" : "Aqeedah"}</option>
+                <option value="salah">{isAr ? "الصلاة" : "Salah"}</option>
+                <option value="fasting">{isAr ? "الصيام" : "Fasting"}</option>
+                <option value="zakat">{isAr ? "الزكاة" : "Zakat"}</option>
+                <option value="family">{isAr ? "الأسرة" : "Family"}</option>
+                <option value="quran">{isAr ? "القرآن" : "Quran"}</option>
+                <option value="hadith">{isAr ? "الحديث" : "Hadith"}</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "سؤالك" : "Your question"}
+              </label>
+              <textarea
+                value={askText}
+                onChange={(e) => setAskText(e.target.value)}
+                rows={5}
+                placeholder={isAr ? "اكتب سؤالك بوضوح..." : "Write your question clearly..."}
+                className="mt-1 w-full bg-background border border-border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={askAnon}
+                onChange={(e) => setAskAnon(e.target.checked)}
+                className="accent-primary"
+              />
+              {isAr ? "إرسال بشكل مجهول" : "Submit anonymously"}
+            </label>
+            <Button
+              onClick={submitQuestion}
+              disabled={askSubmitting || !askText.trim()}
+              className="w-full"
+              variant="hero"
+            >
+              {askSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {isAr ? "إرسال" : "Submit"}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
