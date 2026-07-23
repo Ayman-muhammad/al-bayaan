@@ -38,6 +38,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [bookmarks, setBookmarks] = useState<BM[]>([]);
+  const { prefs } = useQuranPrefs();
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   useEffect(() => {
     listBookmarks(user?.id).then(setBookmarks);
@@ -369,6 +371,9 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
         <div className="ml-auto flex items-center gap-1">
           {screen === "read" && (
             <>
+              <Button variant="ghost" size="icon" onClick={() => setPrefsOpen(true)} title={isAr ? "إعدادات القراءة" : "Reading preferences"}>
+                <Settings2 className="w-4 h-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -486,7 +491,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme}`}>
           {/* Surah header */}
           <div className="text-center py-4 space-y-1 border-b border-border bg-card">
             <h2 className="font-arabic text-2xl text-foreground">{selectedSurah.name.ar}</h2>
@@ -640,7 +645,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       <p
                         className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
                         dir="rtl"
-                        style={{ wordSpacing: "0.05em" }}
+                        style={{
+                          wordSpacing: WORD_SPACING_CSS[prefs.word_spacing],
+                          fontFamily: FONT_FAMILY_CSS[prefs.font_family],
+                          fontSize: `${fontSizeToPx(prefs.font_size_level)}px`,
+                          lineHeight: LINE_SPACING_CSS[prefs.line_spacing],
+                          color: "inherit",
+                        }}
                       >
                         {renderTajweed(ayah.text)}
                       </p>
@@ -710,6 +721,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           )}
         </div>
       )}
+      <QuranPrefsSheet open={prefsOpen} onOpenChange={setPrefsOpen} />
     </div>
   );
 };
