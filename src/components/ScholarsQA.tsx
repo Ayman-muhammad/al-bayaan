@@ -195,6 +195,37 @@ const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
   const [qa, setQa] = useState<QA | null>(null);
   const [qLang, setQLang] = useState<Lang>(isAr ? "ar" : "en");
   const [filter, setFilter] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [askOpen, setAskOpen] = useState(false);
+  const [askCategory, setAskCategory] = useState("general");
+  const [askText, setAskText] = useState("");
+  const [askAnon, setAskAnon] = useState(false);
+  const [askSubmitting, setAskSubmitting] = useState(false);
+
+  const submitQuestion = async () => {
+    if (!askText.trim()) return;
+    if (!user) {
+      toast({ title: isAr ? "سجّل الدخول أولاً" : "Please sign in first", variant: "destructive" });
+      return;
+    }
+    setAskSubmitting(true);
+    const { error } = await supabase.from("questions").insert({
+      user_id: user.id,
+      category: askCategory,
+      question_text: askText.trim(),
+      anonymous: askAnon,
+      status: "pending",
+    });
+    setAskSubmitting(false);
+    if (error) {
+      toast({ title: isAr ? "تعذر الإرسال" : "Failed to submit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: isAr ? "تم إرسال سؤالك، بارك الله فيك" : "Your question has been submitted, jazakAllah khair" });
+    setAskText("");
+    setAskOpen(false);
+  };
 
   const filteredScholars = useMemo(() => {
     if (!filter.trim()) return ALL_SCHOLARS;
