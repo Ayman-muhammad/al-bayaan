@@ -693,7 +693,30 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                     {isPlayingAudio ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
                     {isAr ? "استمع" : "Listen"}
                   </Button>
+                  <Button
+                    variant={maskEnabled ? "hero" : "ghost"}
+                    size="sm"
+                    onClick={() => setMaskEnabled((v) => !v)}
+                    title={isAr ? "إخفاء الكلمات" : "Word mask"}
+                  >
+                    {isAr ? "إخفاء كلمات" : "Mask"}
+                  </Button>
                 </div>
+                {maskEnabled && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+                    <span>{isAr ? "نسبة الإخفاء" : "Mask %"}</span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={70}
+                      step={10}
+                      value={maskPct}
+                      onChange={(e) => setMaskPct(parseInt(e.target.value, 10))}
+                      className="accent-primary w-40"
+                    />
+                    <span className="text-primary font-semibold">{maskPct}%</span>
+                  </div>
+                )}
               </div>
 
               {/* Transcript */}
