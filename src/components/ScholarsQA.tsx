@@ -1,9 +1,13 @@
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, ChevronRight, BookOpen, Globe2 } from "lucide-react";
+import { ArrowLeft, Search, ChevronRight, BookOpen, Globe2, Plus, Send, Loader2 } from "lucide-react";
 import scholarsIcon from "@/assets/icons/icon-scholars.png";
 import { EXTRA_SCHOLARS, type Scholar as ExtraScholar } from "@/data/scholarsQA";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScholarsQAProps {
   onBack: () => void;
@@ -191,6 +195,37 @@ const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
   const [qa, setQa] = useState<QA | null>(null);
   const [qLang, setQLang] = useState<Lang>(isAr ? "ar" : "en");
   const [filter, setFilter] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [askOpen, setAskOpen] = useState(false);
+  const [askCategory, setAskCategory] = useState("general");
+  const [askText, setAskText] = useState("");
+  const [askAnon, setAskAnon] = useState(false);
+  const [askSubmitting, setAskSubmitting] = useState(false);
+
+  const submitQuestion = async () => {
+    if (!askText.trim()) return;
+    if (!user) {
+      toast({ title: isAr ? "سجّل الدخول أولاً" : "Please sign in first", variant: "destructive" });
+      return;
+    }
+    setAskSubmitting(true);
+    const { error } = await supabase.from("questions").insert({
+      user_id: user.id,
+      category: askCategory,
+      question_text: askText.trim(),
+      anonymous: askAnon,
+      status: "pending",
+    });
+    setAskSubmitting(false);
+    if (error) {
+      toast({ title: isAr ? "تعذر الإرسال" : "Failed to submit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: isAr ? "تم إرسال سؤالك، بارك الله فيك" : "Your question has been submitted, jazakAllah khair" });
+    setAskText("");
+    setAskOpen(false);
+  };
 
   const filteredScholars = useMemo(() => {
     if (!filter.trim()) return ALL_SCHOLARS;
@@ -371,6 +406,82 @@ const ScholarsQA = ({ onBack }: ScholarsQAProps) => {
           </div>
         </div>
       )}
+
+      {/* Ask FAB */}
+      <button
+        onClick={() => setAskOpen(true)}
+        aria-label={isAr ? "اسأل سؤالاً" : "Ask a question"}
+        className="fixed bottom-24 md:bottom-6 right-4 z-30 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <Dialog open={askOpen} onOpenChange={setAskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className={isAr ? "font-arabic" : ""}>
+              {isAr ? "اسأل عالماً" : "Ask a scholar"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "الموضوع" : "Category"}
+              </label>
+              <select
+                value={askCategory}
+                onChange={(e) => setAskCategory(e.target.value)}
+                className="mt-1 w-full bg-background border border-border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="general">{isAr ? "عام" : "General"}</option>
+                <option value="aqeedah">{isAr ? "العقيدة" : "Aqeedah"}</option>
+                <option value="salah">{isAr ? "الصلاة" : "Salah"}</option>
+                <option value="fasting">{isAr ? "الصيام" : "Fasting"}</option>
+                <option value="zakat">{isAr ? "الزكاة" : "Zakat"}</option>
+                <option value="family">{isAr ? "الأسرة" : "Family"}</option>
+                <option value="quran">{isAr ? "القرآن" : "Quran"}</option>
+                <option value="hadith">{isAr ? "الحديث" : "Hadith"}</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "سؤالك" : "Your question"}
+              </label>
+              <textarea
+                value={askText}
+                onChange={(e) => setAskText(e.target.value)}
+                rows={5}
+                placeholder={isAr ? "اكتب سؤالك بوضوح..." : "Write your question clearly..."}
+                className="mt-1 w-full bg-background border border-border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={askAnon}
+                onChange={(e) => setAskAnon(e.target.checked)}
+                className="accent-primary"
+              />
+              {isAr ? "إرسال بشكل مجهول" : "Submit anonymously"}
+            </label>
+            <Button
+              onClick={submitQuestion}
+              disabled={askSubmitting || !askText.trim()}
+              className="w-full"
+              variant="hero"
+            >
+              {askSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {isAr ? "إرسال" : "Submit"}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

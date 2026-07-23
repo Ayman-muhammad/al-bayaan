@@ -70,6 +70,34 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
   const ayahWordsRef = useRef<string[]>([]);
   const seenTokensRef = useRef<Set<string>>(new Set());
 
+  // Word mask (memorization aid): hide random words behind a mask; tap to reveal.
+  const [maskEnabled, setMaskEnabled] = useState(false);
+  const [maskPct, setMaskPct] = useState(30); // 10..70
+  const [maskedIdx, setMaskedIdx] = useState<Set<number>>(new Set());
+  const [revealedIdx, setRevealedIdx] = useState<Set<number>>(new Set());
+
+  // Recompute mask when the ayah or settings change
+  useEffect(() => {
+    if (!maskEnabled) {
+      setMaskedIdx(new Set());
+      setRevealedIdx(new Set());
+      return;
+    }
+    const current = ayahs[currentAyahIndex];
+    if (!current) return;
+    const words = current.text.split(/\s+/).filter(Boolean);
+    const n = words.length;
+    const target = Math.max(1, Math.round((maskPct / 100) * n));
+    const idxs = Array.from({ length: n }, (_, i) => i);
+    // Fisher-Yates
+    for (let i = idxs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+    }
+    setMaskedIdx(new Set(idxs.slice(0, target)));
+    setRevealedIdx(new Set());
+  }, [maskEnabled, maskPct, currentAyahIndex, ayahs]);
+
   // Dashboard
   const [dashboardData, setDashboardData] = useState<any[]>([]);
   const [totalMastered, setTotalMastered] = useState(0);
@@ -606,6 +634,7 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                       return rawWords.map((w, idx) => {
                         const state = wordStates[idx] ?? 0;
                         const isCursor = isListening && idx === cursor;
+                        const isMasked = maskEnabled && maskedIdx.has(idx) && !revealedIdx.has(idx);
                         const cls =
                           state === 1
                             ? "text-primary"
@@ -615,7 +644,18 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                             ? "text-accent bg-accent/10 rounded px-1 ring-2 ring-accent/40 animate-pulse"
                             : "text-foreground/90";
                         return (
-                          <span key={idx} className={`transition-colors duration-200 ${cls}`}>
+                          <span
+                            key={idx}
+                            onClick={() => {
+                              if (!isMasked) return;
+                              setRevealedIdx((prev) => {
+                                const n = new Set(prev);
+                                n.add(idx);
+                                return n;
+                              });
+                            }}
+                            className={`transition-colors duration-200 ${cls} ${isMasked ? "hafiz-mask" : ""}`}
+                          >
                             {w}
                           </span>
                         );
@@ -653,7 +693,30 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                     {isPlayingAudio ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
                     {isAr ? "استمع" : "Listen"}
                   </Button>
+                  <Button
+                    variant={maskEnabled ? "hero" : "ghost"}
+                    size="sm"
+                    onClick={() => setMaskEnabled((v) => !v)}
+                    title={isAr ? "إخفاء الكلمات" : "Word mask"}
+                  >
+                    {isAr ? "إخفاء كلمات" : "Mask"}
+                  </Button>
                 </div>
+                {maskEnabled && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+                    <span>{isAr ? "نسبة الإخفاء" : "Mask %"}</span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={70}
+                      step={10}
+                      value={maskPct}
+                      onChange={(e) => setMaskPct(parseInt(e.target.value, 10))}
+                      className="accent-primary w-40"
+                    />
+                    <span className="text-primary font-semibold">{maskPct}%</span>
+                  </div>
+                )}
               </div>
 
               {/* Transcript */}

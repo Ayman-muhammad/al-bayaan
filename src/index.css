@@ -196,6 +196,56 @@
   }
 }
 
+@layer components {
+  /* Mushaf page themes — applied to the reading container. */
+  .mushaf-theme-default {
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+  .mushaf-theme-parchment {
+    background: linear-gradient(180deg, #f7ecd0 0%, #efe0b8 100%);
+    color: #3b2a12;
+  }
+  .mushaf-theme-night {
+    background: #0b1120;
+    color: #e8ecf5;
+  }
+  .mushaf-theme-sepia {
+    background: #f4ecd8;
+    color: #4b3621;
+  }
+  .mushaf-theme-emerald {
+    background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+    color: #ecfdf5;
+  }
+  .mushaf-theme-parchment .quran-page,
+  .mushaf-theme-sepia .quran-page {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(120, 90, 40, 0.25);
+  }
+  .mushaf-theme-night .quran-page,
+  .mushaf-theme-emerald .quran-page {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Hafiz word-mask overlay */
+  .hafiz-mask {
+    background: currentColor;
+    color: transparent !important;
+    border-radius: 4px;
+    opacity: 0.35;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .hafiz-mask:hover { opacity: 0.15; }
+  .hafiz-mask.revealed {
+    background: transparent;
+    color: inherit !important;
+    opacity: 1;
+  }
+}
+
 @layer utilities {
   @keyframes fade-in {
     from { opacity: 0; }
