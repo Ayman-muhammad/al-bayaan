@@ -634,6 +634,7 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                       return rawWords.map((w, idx) => {
                         const state = wordStates[idx] ?? 0;
                         const isCursor = isListening && idx === cursor;
+                        const isMasked = maskEnabled && maskedIdx.has(idx) && !revealedIdx.has(idx);
                         const cls =
                           state === 1
                             ? "text-primary"
@@ -643,7 +644,18 @@ const HafizMode = ({ onBack }: HafizModeProps) => {
                             ? "text-accent bg-accent/10 rounded px-1 ring-2 ring-accent/40 animate-pulse"
                             : "text-foreground/90";
                         return (
-                          <span key={idx} className={`transition-colors duration-200 ${cls}`}>
+                          <span
+                            key={idx}
+                            onClick={() => {
+                              if (!isMasked) return;
+                              setRevealedIdx((prev) => {
+                                const n = new Set(prev);
+                                n.add(idx);
+                                return n;
+                              });
+                            }}
+                            className={`transition-colors duration-200 ${cls} ${isMasked ? "hafiz-mask" : ""}`}
+                          >
                             {w}
                           </span>
                         );
