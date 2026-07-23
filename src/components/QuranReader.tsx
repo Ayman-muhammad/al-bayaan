@@ -2,11 +2,14 @@ import { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useAuth } from "@/contexts/AuthContext";
 import { addBookmark, removeBookmark, listBookmarks, isAyahBookmarked, type Bookmark as BM } from "@/lib/bookmarks";
 import { useToast } from "@/hooks/use-toast";
+import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
+import QuranPrefsSheet from "@/components/QuranPrefsSheet";
 
 interface Ayah {
   number: number;
