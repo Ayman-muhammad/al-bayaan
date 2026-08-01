@@ -20,8 +20,8 @@ const QuranPrefsSheet = ({ open, onOpenChange }: Props) => {
   const isAr = language === "ar";
   const { prefs, update } = useQuranPrefs();
 
-  const fonts: MushafFont[] = ["uthmani", "amiri", "scheherazade", "noto-naskh", "reem-kufi"];
-  const themes: PageTheme[] = ["default", "parchment", "night", "sepia", "emerald"];
+  const fonts: MushafFont[] = ["uthmani", "amiri", "scheherazade", "indopak", "qalam"];
+  const themes: PageTheme[] = ["madinah", "sepia", "dark", "night", "forest"];
   const lineOpts: Array<{ id: any; en: string; ar: string }> = [
     { id: "compact", en: "Compact", ar: "متضام" },
     { id: "normal", en: "Normal", ar: "عادي" },

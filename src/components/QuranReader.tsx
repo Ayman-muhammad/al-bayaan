@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2 } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -10,6 +11,9 @@ import { addBookmark, removeBookmark, listBookmarks, isAyahBookmarked, type Book
 import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
+import MushafPage from "@/components/MushafPage";
+import FamilyDoneButton from "@/components/FamilyDoneButton";
+import { useFamilyMode } from "@/lib/familyMode";
 
 interface Ayah {
   number: number;
@@ -30,6 +34,7 @@ type Screen = "list" | "read" | "search";
 type TafsirMode = "none" | "ibn-kathir" | "jalalayn";
 type DisplayMode = "full" | "arabic-only";
 type TranslationMode = "full" | "word";
+type SearchTab = "surah" | "arabic" | "keyword";
 
 const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
@@ -40,6 +45,18 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [bookmarks, setBookmarks] = useState<BM[]>([]);
   const { prefs } = useQuranPrefs();
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const family = useFamilyMode();
+  const [params] = useSearchParams();
+  const [mushafMode, setMushafMode] = useState<boolean>(
+    () => localStorage.getItem("al-bayan-mushaf-mode") !== "off",
+  );
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
+  const deepLinkDone = useRef(false);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
+  }, [mushafMode]);
 
   useEffect(() => {
     listBookmarks(user?.id).then(setBookmarks);
@@ -276,11 +293,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+    if (searchTab === "surah") return;
     setSearching(true);
     setSearchResults([]);
     try {
+      const edition = searchTab === "arabic" ? "quran-uthmani" : "en.sahih";
       const res = await fetch(
-        `https://api.alquran.cloud/v1/search/${encodeURIComponent(searchQuery)}/all/en.sahih`
+        `https://api.alquran.cloud/v1/search/${encodeURIComponent(searchQuery)}/all/${edition}`
       );
       const data = await res.json();
       if (data.code === 200 && data.data?.matches) {
@@ -310,6 +329,23 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setTadabburOpen({});
     fetchSurah(id);
   };
+
+  // Deep link: /?view=quran&surah=67&ayah=1 (used by Family Cycle bridging)
+  useEffect(() => {
+    if (deepLinkDone.current) return;
+    const s = parseInt(params.get("surah") || "", 10);
+    if (!s || s < 1 || s > 114) return;
+    deepLinkDone.current = true;
+    openSurah(s);
+  }, [params]);
+
+  // Highlight the requested ayah once the surah is loaded.
+  useEffect(() => {
+    const a = parseInt(params.get("ayah") || "", 10);
+    if (!a || ayahs.length === 0) return;
+    const target = ayahs.find((x) => x.numberInSurah === a);
+    if (target) setActiveAyah(target.number);
+  }, [ayahs, params]);
 
   const handleTafsirChange = (mode: TafsirMode) => {
     setTafsirMode(mode);
@@ -371,19 +407,24 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
         <div className="ml-auto flex items-center gap-1">
           {screen === "read" && (
             <>
-              <Button variant="ghost" size="icon" onClick={() => setPrefsOpen(true)} title={isAr ? "إعدادات القراءة" : "Reading preferences"}>
-                <Settings2 className="w-4 h-4" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMushafMode(!mushafMode)}
+                title={mushafMode ? (isAr ? "عرض الآيات" : "Verse view") : (isAr ? "عرض المصحف" : "Mushaf view")}
+              >
+                {mushafMode ? <Rows3 className="w-4 h-4" /> : <ScrollText className="w-4 h-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDisplayMode(displayMode === "full" ? "arabic-only" : "full")}
-                title={displayMode === "full" ? (isAr ? "عربي فقط" : "Arabic only") : (isAr ? "إظهار الكل" : "Show all")}
+                onClick={() => setControlsOpen((v) => !v)}
+                title={isAr ? "أدوات القراءة" : "Reading tools"}
               >
-                {displayMode === "full" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <SlidersHorizontal className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleDownloadSurah} disabled={downloading || ayahs.length === 0}>
-                <Download className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={() => setPrefsOpen(true)} title={isAr ? "إعدادات القراءة" : "Reading preferences"}>
+                <Settings2 className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -394,6 +435,19 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           )}
         </div>
       </header>
+
+      {/* Family Cycle mode banner — never a dead end */}
+      {family.active && (
+        <div className="shrink-0 px-4 py-2 bg-gradient-to-r from-accent/20 to-primary/15 border-b border-accent/30 flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground">
+            {isAr ? "وضع العائلة" : "Family Cycle"}
+            {family.dayNumber ? ` • ${isAr ? "يوم" : "Day"} ${family.dayNumber}${family.durationDays ? `/${family.durationDays}` : ""}` : ""}
+          </span>
+          <button onClick={family.exit} className="ml-auto text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <X className="w-3 h-3" /> {isAr ? "خروج" : "Exit"}
+          </button>
+        </div>
+      )}
 
       {/* === SURAH LIST === */}
       {screen === "list" && (
@@ -440,6 +494,23 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
       {screen === "search" && (
         <>
           <div className="p-4 border-b border-border bg-card shrink-0">
+            <div className="flex gap-1.5 mb-3">
+              {([
+                { id: "surah", en: "Surah", ar: "سورة" },
+                { id: "arabic", en: "Ayah (Arabic)", ar: "آية (عربي)" },
+                { id: "keyword", en: "Keyword (EN)", ar: "كلمة (إنجليزي)" },
+              ] as Array<{ id: SearchTab; en: string; ar: string }>).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setSearchTab(t.id); setSearchResults([]); }}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    searchTab === t.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {isAr ? t.ar : t.en}
+                </button>
+              ))}
+            </div>
             <form
               onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
               className="flex gap-2"
@@ -450,17 +521,44 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isAr ? "ابحث بالكلمات (بالإنجليزية)..." : "Search by keyword (English)..."}
+                  placeholder={
+                    searchTab === "surah"
+                      ? (isAr ? "اسم السورة أو رقمها..." : "Surah name or number...")
+                      : searchTab === "arabic"
+                        ? (isAr ? "ابحث في نص الآية..." : "Search Arabic ayah text...")
+                        : (isAr ? "ابحث بالكلمات (بالإنجليزية)..." : "Search by keyword (English)...")
+                  }
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
               </div>
-              <Button type="submit" variant="hero" disabled={searching || !searchQuery.trim()}>
-                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : isAr ? "بحث" : "Search"}
-              </Button>
+              {searchTab !== "surah" && (
+                <Button type="submit" variant="hero" disabled={searching || !searchQuery.trim()}>
+                  {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : isAr ? "بحث" : "Search"}
+                </Button>
+              )}
             </form>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+            {searchTab === "surah" && (
+              <div className="space-y-1.5">
+                {SURAHS.filter((s) => {
+                  const q = searchQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return s.name.en.toLowerCase().includes(q) || s.name.ar.includes(searchQuery) || String(s.id).includes(q);
+                }).map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => openSurah(s.id)}
+                    className="w-full flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2.5 hover:border-primary/40 transition-colors"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{s.id}</span>
+                    <span className="text-sm font-medium text-foreground">{s.name.en}</span>
+                    <span className="ml-auto font-arabic text-sm text-foreground">{s.name.ar}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {searching && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -482,7 +580,12 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                   <BookOpen className="w-3 h-3" />
                   {r.surahName} — {isAr ? "آية" : "Ayah"} {r.numberInSurah}
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{r.text}</p>
+                <p
+                  className={`text-sm text-foreground leading-relaxed ${searchTab === "arabic" ? "font-arabic text-right text-lg leading-[2]" : ""}`}
+                  dir={searchTab === "arabic" ? "rtl" : "ltr"}
+                >
+                  {r.text}
+                </p>
               </button>
             ))}
           </div>
@@ -491,18 +594,21 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
-        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme}`}>
-          {/* Surah header */}
-          <div className="text-center py-4 space-y-1 border-b border-border bg-card">
-            <h2 className="font-arabic text-2xl text-foreground">{selectedSurah.name.ar}</h2>
-            <p className="text-sm text-muted-foreground">{selectedSurah.name.en}</p>
-            <p className="text-xs text-accent">
-              {selectedSurah.verses} {isAr ? "آية" : "verses"} • {isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}
-            </p>
-          </div>
+        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}>
+          {!mushafMode && (
+            <div className="text-center py-4 space-y-1 border-b border-border/40">
+              <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
+              <p className="text-sm opacity-70">{selectedSurah.name.en}</p>
+              <p className="text-xs" style={{ color: "var(--mushaf-accent)" }}>
+                {selectedSurah.verses} {isAr ? "آية" : "verses"} • {isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}
+              </p>
+            </div>
+          )}
 
-          {/* Tafsir & display controls */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
+          {/* Tafsir & display controls (collapsed by default for a clean page) */}
+          {controlsOpen && (
+          <>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/60">
             <BookMarked className="w-4 h-4 text-primary shrink-0" />
             <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
               {isAr ? "التفسير:" : "Tafsir:"}
@@ -520,10 +626,24 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                 {mode === "none" ? (isAr ? "بدون" : "None") : mode === "ibn-kathir" ? (isAr ? "ابن كثير" : "Ibn Kathir") : (isAr ? "الجلالين" : "Al-Jalalayn")}
               </button>
             ))}
+            <button
+              onClick={() => setDisplayMode(displayMode === "full" ? "arabic-only" : "full")}
+              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80"
+            >
+              {displayMode === "full" ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {displayMode === "full" ? (isAr ? "عربي فقط" : "Arabic only") : (isAr ? "إظهار الكل" : "Show all")}
+            </button>
+            <button
+              onClick={handleDownloadSurah}
+              disabled={downloading || ayahs.length === 0}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> {isAr ? "تحميل" : "Save"}
+            </button>
           </div>
 
           {/* Translation mode toggle */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/30">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/40">
             <Languages className="w-4 h-4 text-accent shrink-0" />
             <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
               {isAr ? "الترجمة:" : "Translation:"}
@@ -549,7 +669,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           </div>
 
           {/* Reciter + speed + repeat */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/60">
             <Mic2 className="w-4 h-4 text-primary shrink-0" />
             <select
               value={reciterId}
@@ -582,12 +702,86 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               <Repeat className="w-3.5 h-3.5" /> {isAr ? "تكرار" : "Repeat"}
             </button>
           </div>
+          </>
+          )}
 
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">{isAr ? "جاري التحميل..." : "Loading..."}</p>
             </div>
+          ) : mushafMode ? (
+            <>
+              <MushafPage
+                ayahs={ayahs}
+                prefs={prefs}
+                activeAyah={activeAyah}
+                renderText={renderTajweed}
+                showBismillah={selectedSurahId !== 9 && selectedSurahId !== 1}
+                surahNameAr={selectedSurah.name.ar}
+                surahNameEn={selectedSurah.name.en}
+                meta={`${selectedSurah.verses} ${isAr ? "آية" : "verses"} • ${isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}`}
+                onAyahTap={(a) => {
+                  if (selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+                }}
+              />
+
+              {/* Active-ayah detail panel: translation, tafsir, tadabbur, favorite */}
+              {(() => {
+                const ayah = ayahs.find((a) => a.number === activeAyah);
+                if (!ayah) return null;
+                const fav = selectedSurahId ? isAyahBookmarked(bookmarks, selectedSurahId, ayah.numberInSurah) : undefined;
+                const showTadabbur = !!tadabburOpen[ayah.numberInSurah];
+                return (
+                  <div className="mx-3 sm:mx-5 mb-32 rounded-2xl border border-border/50 bg-card/90 backdrop-blur p-4 space-y-3 animate-fade-in">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-accent">
+                        {selectedSurah.name.en} {selectedSurahId}:{ayah.numberInSurah}
+                      </span>
+                      <button
+                        onClick={() => toggleAyahFavorite(ayah, selectedSurah.name.en)}
+                        className={`ml-auto p-1.5 rounded-full ${fav ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground hover:text-rose-400"}`}
+                        aria-label={fav ? "Unfavorite" : "Favorite"}
+                      >
+                        <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
+                      </button>
+                    </div>
+                    {ayah.translation && (
+                      <p className="text-sm text-foreground/85 leading-[1.75]">{ayah.translation}</p>
+                    )}
+                    {currentTafsirKey && ayah[currentTafsirKey] && (
+                      <div className="border-t border-border/50 pt-3">
+                        <p className="text-xs font-medium text-accent mb-1">
+                          {tafsirMode === "ibn-kathir" ? (isAr ? "تفسير ابن كثير" : "Tafsir Ibn Kathir") : (isAr ? "تفسير الجلالين" : "Tafsir Al-Jalalayn")}
+                        </p>
+                        <p className={`text-sm leading-[1.8] text-foreground/80 ${tafsirMode === "jalalayn" ? "font-arabic text-right" : ""}`} dir={tafsirMode === "jalalayn" ? "rtl" : "ltr"}>
+                          {ayah[currentTafsirKey]}
+                        </p>
+                      </div>
+                    )}
+                    <div className="border-t border-border/50 pt-3">
+                      <button
+                        onClick={() => setTadabburOpen((p) => ({ ...p, [ayah.numberInSurah]: !p[ayah.numberInSurah] }))}
+                        className="inline-flex items-center gap-2 text-xs font-medium text-accent hover:text-primary"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        {isAr ? "تدبّر" : "Tadabbur"}
+                        <ChevronRight className={`w-3 h-3 transition-transform ${showTadabbur ? "rotate-90" : ""}`} />
+                      </button>
+                      {showTadabbur && (
+                        <ul className="mt-2 space-y-1.5 animate-fade-in">
+                          {tadabburQuestions(ayah.numberInSurah, ayah.translation || "").map((q, i) => (
+                            <li key={i} className="text-sm text-foreground/85 leading-relaxed pl-4 relative before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-accent">
+                              {q}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           ) : (
             <div className="p-4 space-y-4">
               {selectedSurahId !== 9 && selectedSurahId !== 1 && (
@@ -721,6 +915,43 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           )}
         </div>
       )}
+      {/* Minimal floating audio bar */}
+      {screen === "read" && activeAyah !== null && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-[80] flex items-center gap-3 px-4 py-2.5 rounded-full bg-card/95 backdrop-blur border border-border shadow-xl">
+          <button
+            onClick={() => {
+              const a = ayahs.find((x) => x.number === activeAyah);
+              if (a && selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+            }}
+            className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+            aria-label={player.isPlaying ? "Pause" : "Play"}
+          >
+            {player.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+          <span className="text-xs font-medium text-foreground">
+            {isAr ? "آية" : "Ayah"} {ayahs.find((x) => x.number === activeAyah)?.numberInSurah}
+          </span>
+          <button
+            onClick={() => player.setRepeat(!player.repeat)}
+            className={`p-1.5 rounded-full ${player.repeat ? "text-accent bg-accent/10" : "text-muted-foreground"}`}
+            aria-label="Repeat"
+          >
+            <Repeat className="w-4 h-4" />
+          </button>
+          <button onClick={() => setActiveAyah(null)} className="p-1.5 text-muted-foreground hover:text-foreground" aria-label="Close player">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      <FamilyDoneButton
+        family={family}
+        label={
+          selectedSurah
+            ? `${isAr ? "سورة" : "Surah"} ${isAr ? selectedSurah.name.ar : selectedSurah.name.en}`
+            : isAr ? "قراءة القرآن" : "Quran reading"
+        }
+      />
       <QuranPrefsSheet open={prefsOpen} onOpenChange={setPrefsOpen} />
     </div>
   );
