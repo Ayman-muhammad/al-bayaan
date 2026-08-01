@@ -915,6 +915,43 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           )}
         </div>
       )}
+      {/* Minimal floating audio bar */}
+      {screen === "read" && activeAyah !== null && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-[80] flex items-center gap-3 px-4 py-2.5 rounded-full bg-card/95 backdrop-blur border border-border shadow-xl">
+          <button
+            onClick={() => {
+              const a = ayahs.find((x) => x.number === activeAyah);
+              if (a && selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+            }}
+            className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+            aria-label={player.isPlaying ? "Pause" : "Play"}
+          >
+            {player.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+          <span className="text-xs font-medium text-foreground">
+            {isAr ? "آية" : "Ayah"} {ayahs.find((x) => x.number === activeAyah)?.numberInSurah}
+          </span>
+          <button
+            onClick={() => player.setRepeat(!player.repeat)}
+            className={`p-1.5 rounded-full ${player.repeat ? "text-accent bg-accent/10" : "text-muted-foreground"}`}
+            aria-label="Repeat"
+          >
+            <Repeat className="w-4 h-4" />
+          </button>
+          <button onClick={() => setActiveAyah(null)} className="p-1.5 text-muted-foreground hover:text-foreground" aria-label="Close player">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      <FamilyDoneButton
+        family={family}
+        label={
+          selectedSurah
+            ? `${isAr ? "سورة" : "Surah"} ${isAr ? selectedSurah.name.ar : selectedSurah.name.en}`
+            : isAr ? "قراءة القرآن" : "Quran reading"
+        }
+      />
       <QuranPrefsSheet open={prefsOpen} onOpenChange={setPrefsOpen} />
     </div>
   );
