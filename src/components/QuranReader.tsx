@@ -494,6 +494,23 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
       {screen === "search" && (
         <>
           <div className="p-4 border-b border-border bg-card shrink-0">
+            <div className="flex gap-1.5 mb-3">
+              {([
+                { id: "surah", en: "Surah", ar: "سورة" },
+                { id: "arabic", en: "Ayah (Arabic)", ar: "آية (عربي)" },
+                { id: "keyword", en: "Keyword (EN)", ar: "كلمة (إنجليزي)" },
+              ] as Array<{ id: SearchTab; en: string; ar: string }>).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setSearchTab(t.id); setSearchResults([]); }}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    searchTab === t.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {isAr ? t.ar : t.en}
+                </button>
+              ))}
+            </div>
             <form
               onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
               className="flex gap-2"
@@ -504,17 +521,44 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isAr ? "ابحث بالكلمات (بالإنجليزية)..." : "Search by keyword (English)..."}
+                  placeholder={
+                    searchTab === "surah"
+                      ? (isAr ? "اسم السورة أو رقمها..." : "Surah name or number...")
+                      : searchTab === "arabic"
+                        ? (isAr ? "ابحث في نص الآية..." : "Search Arabic ayah text...")
+                        : (isAr ? "ابحث بالكلمات (بالإنجليزية)..." : "Search by keyword (English)...")
+                  }
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
               </div>
-              <Button type="submit" variant="hero" disabled={searching || !searchQuery.trim()}>
-                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : isAr ? "بحث" : "Search"}
-              </Button>
+              {searchTab !== "surah" && (
+                <Button type="submit" variant="hero" disabled={searching || !searchQuery.trim()}>
+                  {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : isAr ? "بحث" : "Search"}
+                </Button>
+              )}
             </form>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+            {searchTab === "surah" && (
+              <div className="space-y-1.5">
+                {SURAHS.filter((s) => {
+                  const q = searchQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return s.name.en.toLowerCase().includes(q) || s.name.ar.includes(searchQuery) || String(s.id).includes(q);
+                }).map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => openSurah(s.id)}
+                    className="w-full flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2.5 hover:border-primary/40 transition-colors"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{s.id}</span>
+                    <span className="text-sm font-medium text-foreground">{s.name.en}</span>
+                    <span className="ml-auto font-arabic text-sm text-foreground">{s.name.ar}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {searching && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -536,7 +580,12 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                   <BookOpen className="w-3 h-3" />
                   {r.surahName} — {isAr ? "آية" : "Ayah"} {r.numberInSurah}
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{r.text}</p>
+                <p
+                  className={`text-sm text-foreground leading-relaxed ${searchTab === "arabic" ? "font-arabic text-right text-lg leading-[2]" : ""}`}
+                  dir={searchTab === "arabic" ? "rtl" : "ltr"}
+                >
+                  {r.text}
+                </p>
               </button>
             ))}
           </div>
