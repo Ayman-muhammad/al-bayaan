@@ -197,36 +197,123 @@
 }
 
 @layer components {
-  /* Mushaf page themes — applied to the reading container. */
-  .mushaf-theme-default {
-    background: hsl(var(--card));
-    color: hsl(var(--foreground));
-  }
-  .mushaf-theme-parchment {
-    background: linear-gradient(180deg, #f7ecd0 0%, #efe0b8 100%);
-    color: #3b2a12;
-  }
-  .mushaf-theme-night {
-    background: #0b1120;
-    color: #e8ecf5;
+  /* ── Mushaf page themes ───────────────────────────────────────────────
+     Each theme sets the page palette via local custom properties so the
+     ornaments, medallions and separators all recolour together.          */
+  .mushaf-theme-madinah {
+    --mushaf-bg: #f5f1e8;
+    --mushaf-bg-2: #efe8d8;
+    --mushaf-fg: #3d2b1f;
+    --mushaf-accent: #b08d3f;
+    --mushaf-muted: #7a6a52;
   }
   .mushaf-theme-sepia {
-    background: #f4ecd8;
-    color: #4b3621;
+    --mushaf-bg: #f4ecd8;
+    --mushaf-bg-2: #e9dcbe;
+    --mushaf-fg: #4b3621;
+    --mushaf-accent: #8a6a3b;
+    --mushaf-muted: #7c6647;
   }
-  .mushaf-theme-emerald {
-    background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
-    color: #ecfdf5;
+  .mushaf-theme-dark {
+    --mushaf-bg: #1a1814;
+    --mushaf-bg-2: #221f19;
+    --mushaf-fg: #ece3d0;
+    --mushaf-accent: #d4af37;
+    --mushaf-muted: #a9a08c;
   }
-  .mushaf-theme-parchment .quran-page,
-  .mushaf-theme-sepia .quran-page {
-    background: rgba(255, 255, 255, 0.35);
-    border-color: rgba(120, 90, 40, 0.25);
+  .mushaf-theme-night {
+    --mushaf-bg: #0f172a;
+    --mushaf-bg-2: #131d34;
+    --mushaf-fg: #dbe6f5;
+    --mushaf-accent: #4fd1c5;
+    --mushaf-muted: #92a4c0;
   }
-  .mushaf-theme-night .quran-page,
-  .mushaf-theme-emerald .quran-page {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
+  .mushaf-theme-forest {
+    --mushaf-bg: #12261c;
+    --mushaf-bg-2: #173021;
+    --mushaf-fg: #ddf0e2;
+    --mushaf-accent: #4ade80;
+    --mushaf-muted: #94b8a0;
+  }
+  .mushaf-surface {
+    background: linear-gradient(180deg, var(--mushaf-bg) 0%, var(--mushaf-bg-2) 100%);
+    color: var(--mushaf-fg);
+  }
+
+  /* Paper-like page card with a double gold rule, like a printed Mushaf. */
+  .quran-page {
+    position: relative;
+    background: var(--mushaf-bg);
+    border: 1px solid color-mix(in srgb, var(--mushaf-accent) 45%, transparent);
+    box-shadow:
+      0 1px 0 color-mix(in srgb, var(--mushaf-accent) 30%, transparent) inset,
+      0 10px 30px -18px rgba(0, 0, 0, 0.5);
+    border-radius: 14px;
+  }
+  .quran-page::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid color-mix(in srgb, var(--mushaf-accent) 28%, transparent);
+    border-radius: 10px;
+    pointer-events: none;
+  }
+
+  /* Ornate surah banner */
+  .surah-banner {
+    background:
+      radial-gradient(circle at 12% 50%, color-mix(in srgb, var(--mushaf-accent) 22%, transparent) 0 1px, transparent 2px) 0 0/14px 14px,
+      linear-gradient(90deg,
+        color-mix(in srgb, var(--mushaf-accent) 16%, transparent),
+        color-mix(in srgb, var(--mushaf-accent) 6%, transparent),
+        color-mix(in srgb, var(--mushaf-accent) 16%, transparent));
+    border-top: 2px solid color-mix(in srgb, var(--mushaf-accent) 60%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, var(--mushaf-accent) 60%, transparent);
+  }
+
+  /* Continuous justified Mushaf flow (RTL, shaping-safe) */
+  .mushaf-flow {
+    direction: rtl;
+    text-align: justify;
+    text-align-last: center;
+    text-justify: inter-word;
+    unicode-bidi: isolate;
+  }
+  .mushaf-ayah {
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.25s ease;
+  }
+  .mushaf-ayah.is-active {
+    background: color-mix(in srgb, var(--mushaf-accent) 22%, transparent);
+  }
+
+  /* Decorative ayah-number medallion (۝ style rosette) */
+  .ayah-medallion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55em;
+    height: 1.55em;
+    margin: 0 0.18em;
+    font-size: 0.46em;
+    font-weight: 600;
+    line-height: 1;
+    vertical-align: 0.35em;
+    color: var(--mushaf-accent);
+    border: 1.5px solid color-mix(in srgb, var(--mushaf-accent) 70%, transparent);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, color-mix(in srgb, var(--mushaf-accent) 14%, transparent) 40%, transparent 70%);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mushaf-accent) 18%, transparent);
+    font-family: system-ui, sans-serif;
+    direction: ltr;
+  }
+
+  .mushaf-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent,
+      color-mix(in srgb, var(--mushaf-accent) 55%, transparent), transparent);
   }
 
   /* Hafiz word-mask overlay */
@@ -282,6 +369,29 @@
 
   .animate-confetti {
     animation: confetti-burst 0.8s ease-out forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-12vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 14px;
+    border-radius: 2px;
+    animation: confetti-fall 1.9s ease-in forwards;
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--accent) / 0.55); }
+    50% { box-shadow: 0 0 0 14px hsl(var(--accent) / 0); }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 2.2s ease-out infinite;
   }
 
   .scrollbar-thin {

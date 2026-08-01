@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2 } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -10,6 +11,9 @@ import { addBookmark, removeBookmark, listBookmarks, isAyahBookmarked, type Book
 import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
+import MushafPage from "@/components/MushafPage";
+import FamilyDoneButton from "@/components/FamilyDoneButton";
+import { useFamilyMode } from "@/lib/familyMode";
 
 interface Ayah {
   number: number;
@@ -30,6 +34,7 @@ type Screen = "list" | "read" | "search";
 type TafsirMode = "none" | "ibn-kathir" | "jalalayn";
 type DisplayMode = "full" | "arabic-only";
 type TranslationMode = "full" | "word";
+type SearchTab = "surah" | "arabic" | "keyword";
 
 const QuranReader = ({ onBack }: QuranReaderProps) => {
   const { language } = useLanguage();
@@ -40,6 +45,18 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [bookmarks, setBookmarks] = useState<BM[]>([]);
   const { prefs } = useQuranPrefs();
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const family = useFamilyMode();
+  const [params] = useSearchParams();
+  const [mushafMode, setMushafMode] = useState<boolean>(
+    () => localStorage.getItem("al-bayan-mushaf-mode") !== "off",
+  );
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
+  const deepLinkDone = useRef(false);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
+  }, [mushafMode]);
 
   useEffect(() => {
     listBookmarks(user?.id).then(setBookmarks);
@@ -276,11 +293,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+    if (searchTab === "surah") return;
     setSearching(true);
     setSearchResults([]);
     try {
+      const edition = searchTab === "arabic" ? "quran-uthmani" : "en.sahih";
       const res = await fetch(
-        `https://api.alquran.cloud/v1/search/${encodeURIComponent(searchQuery)}/all/en.sahih`
+        `https://api.alquran.cloud/v1/search/${encodeURIComponent(searchQuery)}/all/${edition}`
       );
       const data = await res.json();
       if (data.code === 200 && data.data?.matches) {
@@ -310,6 +329,23 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setTadabburOpen({});
     fetchSurah(id);
   };
+
+  // Deep link: /?view=quran&surah=67&ayah=1 (used by Family Cycle bridging)
+  useEffect(() => {
+    if (deepLinkDone.current) return;
+    const s = parseInt(params.get("surah") || "", 10);
+    if (!s || s < 1 || s > 114) return;
+    deepLinkDone.current = true;
+    openSurah(s);
+  }, [params]);
+
+  // Highlight the requested ayah once the surah is loaded.
+  useEffect(() => {
+    const a = parseInt(params.get("ayah") || "", 10);
+    if (!a || ayahs.length === 0) return;
+    const target = ayahs.find((x) => x.numberInSurah === a);
+    if (target) setActiveAyah(target.number);
+  }, [ayahs, params]);
 
   const handleTafsirChange = (mode: TafsirMode) => {
     setTafsirMode(mode);
