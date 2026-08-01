@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { buildFamilyDeepLink } from "@/lib/familyMode";
 
 interface Props {
   onBack: () => void;
@@ -78,6 +80,7 @@ const ACTIVITY_TEMPLATES: Array<{
 ];
 
 const FamilyCycle = ({ onBack, onNavigate }: Props) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { language } = useLanguage();
   const isAr = language === "ar";
