@@ -702,12 +702,86 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               <Repeat className="w-3.5 h-3.5" /> {isAr ? "تكرار" : "Repeat"}
             </button>
           </div>
+          </>
+          )}
 
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">{isAr ? "جاري التحميل..." : "Loading..."}</p>
             </div>
+          ) : mushafMode ? (
+            <>
+              <MushafPage
+                ayahs={ayahs}
+                prefs={prefs}
+                activeAyah={activeAyah}
+                renderText={renderTajweed}
+                showBismillah={selectedSurahId !== 9 && selectedSurahId !== 1}
+                surahNameAr={selectedSurah.name.ar}
+                surahNameEn={selectedSurah.name.en}
+                meta={`${selectedSurah.verses} ${isAr ? "آية" : "verses"} • ${isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}`}
+                onAyahTap={(a) => {
+                  if (selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+                }}
+              />
+
+              {/* Active-ayah detail panel: translation, tafsir, tadabbur, favorite */}
+              {(() => {
+                const ayah = ayahs.find((a) => a.number === activeAyah);
+                if (!ayah) return null;
+                const fav = selectedSurahId ? isAyahBookmarked(bookmarks, selectedSurahId, ayah.numberInSurah) : undefined;
+                const showTadabbur = !!tadabburOpen[ayah.numberInSurah];
+                return (
+                  <div className="mx-3 sm:mx-5 mb-32 rounded-2xl border border-border/50 bg-card/90 backdrop-blur p-4 space-y-3 animate-fade-in">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-accent">
+                        {selectedSurah.name.en} {selectedSurahId}:{ayah.numberInSurah}
+                      </span>
+                      <button
+                        onClick={() => toggleAyahFavorite(ayah, selectedSurah.name.en)}
+                        className={`ml-auto p-1.5 rounded-full ${fav ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground hover:text-rose-400"}`}
+                        aria-label={fav ? "Unfavorite" : "Favorite"}
+                      >
+                        <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
+                      </button>
+                    </div>
+                    {ayah.translation && (
+                      <p className="text-sm text-foreground/85 leading-[1.75]">{ayah.translation}</p>
+                    )}
+                    {currentTafsirKey && ayah[currentTafsirKey] && (
+                      <div className="border-t border-border/50 pt-3">
+                        <p className="text-xs font-medium text-accent mb-1">
+                          {tafsirMode === "ibn-kathir" ? (isAr ? "تفسير ابن كثير" : "Tafsir Ibn Kathir") : (isAr ? "تفسير الجلالين" : "Tafsir Al-Jalalayn")}
+                        </p>
+                        <p className={`text-sm leading-[1.8] text-foreground/80 ${tafsirMode === "jalalayn" ? "font-arabic text-right" : ""}`} dir={tafsirMode === "jalalayn" ? "rtl" : "ltr"}>
+                          {ayah[currentTafsirKey]}
+                        </p>
+                      </div>
+                    )}
+                    <div className="border-t border-border/50 pt-3">
+                      <button
+                        onClick={() => setTadabburOpen((p) => ({ ...p, [ayah.numberInSurah]: !p[ayah.numberInSurah] }))}
+                        className="inline-flex items-center gap-2 text-xs font-medium text-accent hover:text-primary"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        {isAr ? "تدبّر" : "Tadabbur"}
+                        <ChevronRight className={`w-3 h-3 transition-transform ${showTadabbur ? "rotate-90" : ""}`} />
+                      </button>
+                      {showTadabbur && (
+                        <ul className="mt-2 space-y-1.5 animate-fade-in">
+                          {tadabburQuestions(ayah.numberInSurah, ayah.translation || "").map((q, i) => (
+                            <li key={i} className="text-sm text-foreground/85 leading-relaxed pl-4 relative before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-accent">
+                              {q}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           ) : (
             <div className="p-4 space-y-4">
               {selectedSurahId !== 9 && selectedSurahId !== 1 && (
