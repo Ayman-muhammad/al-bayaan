@@ -594,18 +594,21 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
-        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme}`}>
-          {/* Surah header */}
-          <div className="text-center py-4 space-y-1 border-b border-border bg-card">
-            <h2 className="font-arabic text-2xl text-foreground">{selectedSurah.name.ar}</h2>
-            <p className="text-sm text-muted-foreground">{selectedSurah.name.en}</p>
-            <p className="text-xs text-accent">
-              {selectedSurah.verses} {isAr ? "آية" : "verses"} • {isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}
-            </p>
-          </div>
+        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}>
+          {!mushafMode && (
+            <div className="text-center py-4 space-y-1 border-b border-border/40">
+              <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
+              <p className="text-sm opacity-70">{selectedSurah.name.en}</p>
+              <p className="text-xs" style={{ color: "var(--mushaf-accent)" }}>
+                {selectedSurah.verses} {isAr ? "آية" : "verses"} • {isAr ? (selectedSurah.type === "Meccan" ? "مكية" : "مدنية") : selectedSurah.type}
+              </p>
+            </div>
+          )}
 
-          {/* Tafsir & display controls */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
+          {/* Tafsir & display controls (collapsed by default for a clean page) */}
+          {controlsOpen && (
+          <>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/60">
             <BookMarked className="w-4 h-4 text-primary shrink-0" />
             <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
               {isAr ? "التفسير:" : "Tafsir:"}
@@ -623,10 +626,24 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                 {mode === "none" ? (isAr ? "بدون" : "None") : mode === "ibn-kathir" ? (isAr ? "ابن كثير" : "Ibn Kathir") : (isAr ? "الجلالين" : "Al-Jalalayn")}
               </button>
             ))}
+            <button
+              onClick={() => setDisplayMode(displayMode === "full" ? "arabic-only" : "full")}
+              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80"
+            >
+              {displayMode === "full" ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {displayMode === "full" ? (isAr ? "عربي فقط" : "Arabic only") : (isAr ? "إظهار الكل" : "Show all")}
+            </button>
+            <button
+              onClick={handleDownloadSurah}
+              disabled={downloading || ayahs.length === 0}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> {isAr ? "تحميل" : "Save"}
+            </button>
           </div>
 
           {/* Translation mode toggle */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/30">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/40">
             <Languages className="w-4 h-4 text-accent shrink-0" />
             <span className={`text-xs font-medium text-foreground ${isAr ? "font-arabic" : ""}`}>
               {isAr ? "الترجمة:" : "Translation:"}
@@ -652,7 +669,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           </div>
 
           {/* Reciter + speed + repeat */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border bg-card/50">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b border-border/40 bg-card/60">
             <Mic2 className="w-4 h-4 text-primary shrink-0" />
             <select
               value={reciterId}
