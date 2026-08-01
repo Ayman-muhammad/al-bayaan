@@ -407,19 +407,24 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
         <div className="ml-auto flex items-center gap-1">
           {screen === "read" && (
             <>
-              <Button variant="ghost" size="icon" onClick={() => setPrefsOpen(true)} title={isAr ? "إعدادات القراءة" : "Reading preferences"}>
-                <Settings2 className="w-4 h-4" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMushafMode(!mushafMode)}
+                title={mushafMode ? (isAr ? "عرض الآيات" : "Verse view") : (isAr ? "عرض المصحف" : "Mushaf view")}
+              >
+                {mushafMode ? <Rows3 className="w-4 h-4" /> : <ScrollText className="w-4 h-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDisplayMode(displayMode === "full" ? "arabic-only" : "full")}
-                title={displayMode === "full" ? (isAr ? "عربي فقط" : "Arabic only") : (isAr ? "إظهار الكل" : "Show all")}
+                onClick={() => setControlsOpen((v) => !v)}
+                title={isAr ? "أدوات القراءة" : "Reading tools"}
               >
-                {displayMode === "full" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <SlidersHorizontal className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleDownloadSurah} disabled={downloading || ayahs.length === 0}>
-                <Download className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={() => setPrefsOpen(true)} title={isAr ? "إعدادات القراءة" : "Reading preferences"}>
+                <Settings2 className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -430,6 +435,19 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           )}
         </div>
       </header>
+
+      {/* Family Cycle mode banner — never a dead end */}
+      {family.active && (
+        <div className="shrink-0 px-4 py-2 bg-gradient-to-r from-accent/20 to-primary/15 border-b border-accent/30 flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground">
+            {isAr ? "وضع العائلة" : "Family Cycle"}
+            {family.dayNumber ? ` • ${isAr ? "يوم" : "Day"} ${family.dayNumber}${family.durationDays ? `/${family.durationDays}` : ""}` : ""}
+          </span>
+          <button onClick={family.exit} className="ml-auto text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <X className="w-3 h-3" /> {isAr ? "خروج" : "Exit"}
+          </button>
+        </div>
+      )}
 
       {/* === SURAH LIST === */}
       {screen === "list" && (
