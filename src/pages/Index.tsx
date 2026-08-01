@@ -64,15 +64,12 @@ const Index = () => {
     requestNotifPermission();
   }, []);
 
-  // Auto-redirect returning users to Dashboard
+  // Login always lands on Home. Deep links (?view=quran&familyMode=true...)
+  // are honoured so Family Cycle bridging never dead-ends.
   useEffect(() => {
-    if (loading) return;
-    const redirected = sessionStorage.getItem("auto-dashboard-done");
-    if (user && !redirected && currentView === "home") {
-      sessionStorage.setItem("auto-dashboard-done", "1");
-      setCurrentView("dashboard");
-    }
-  }, [user, loading, currentView]);
+    const v = new URLSearchParams(window.location.search).get("view");
+    if (v) setCurrentView(v as View);
+  }, []);
 
   // Save last position
   useEffect(() => {
