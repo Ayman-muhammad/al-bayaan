@@ -210,22 +210,10 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
   }
 
   function openActivity(activity: Activity) {
-    const params = new URLSearchParams({ familyCycle: activity.id });
-    if (activity.activity_type === "quran") {
-      if (activity.surah_number) params.set("surah", String(activity.surah_number));
-      window.history.pushState({}, "", `/?${params.toString()}`);
-      onNavigate("quran");
-    } else if (activity.activity_type === "adhkar_morning") {
-      params.set("type", "morning");
-      window.history.pushState({}, "", `/?${params.toString()}`);
-      onNavigate("adhkar");
-    } else if (activity.activity_type === "adhkar_evening") {
-      params.set("type", "evening");
-      window.history.pushState({}, "", `/?${params.toString()}`);
-      onNavigate("adhkar");
-    } else if (activity.activity_type === "dhikr") {
-      window.history.pushState({}, "", `/?${params.toString()}`);
-      onNavigate("dhikr");
+    if (["quran", "adhkar_morning", "adhkar_evening", "dhikr"].includes(activity.activity_type)) {
+      const { view, search } = buildFamilyDeepLink(activity);
+      navigate(`/?view=${view}&${search}`);
+      onNavigate(view);
     } else {
       // gratitude / charity — inline complete
       void markDone(activity);
