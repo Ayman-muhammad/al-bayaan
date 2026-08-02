@@ -4,8 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Bookmark, BookOpen, MessageSquare, Headphones,
-  Search, Tag, Trash2, Heart
+  Search, Tag, Trash2, Heart, Eye, Copy, ExternalLink
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { listBookmarks, removeBookmark, type Bookmark as BM } from "@/lib/bookmarks";
 
@@ -26,6 +28,7 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const [bookmarks, setBookmarks] = useState<BM[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [review, setReview] = useState<BM | null>(null);
 
   const fetchBookmarks = useCallback(async () => {
     setLoading(true);
@@ -38,7 +41,39 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
   const deleteBookmark = async (id: string) => {
     await removeBookmark(user?.id, id);
     setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    setReview((r) => (r?.id === id ? null : r));
     toast({ title: isAr ? "تم الحذف" : "Removed", duration: 2000 });
+  };
+
+  /** Opens the saved item in its native surface (Quran reader / audio library). */
+  const openBookmark = (b: BM) => {
+    const c = b.content as any;
+    if (b.type === "ayahs" && c?.surahId) {
+      const p = new URLSearchParams({ view: "quran", surah: String(c.surahId) });
+      if (c.ayahNumber) p.set("ayah", String(c.ayahNumber));
+      window.location.search = `?${p.toString()}`;
+      return;
+    }
+    if (b.type === "audio") {
+      onNavigate("audio");
+      return;
+    }
+    setReview(b);
+  };
+
+  const copyReview = async () => {
+    if (!review) return;
+    const c = review.content as any;
+    const text =
+      review.type === "chat"
+        ? `Q: ${c?.query || ""}\n\n${c?.response || ""}`
+        : [c?.arabic, c?.translation, c?.reference].filter(Boolean).join("\n\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: isAr ? "تم النسخ" : "Copied", duration: 1800 });
+    } catch {
+      toast({ title: isAr ? "تعذر النسخ" : "Copy failed", variant: "destructive" });
+    }
   };
 
   const filtered = bookmarks
@@ -163,8 +198,8 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
 
               {bookmark.type === "chat" && (
                 <>
-                  <p className="text-xs text-muted-foreground font-medium">Q: {(bookmark.content as any)?.query || ""}</p>
-                  <p className="text-sm text-foreground line-clamp-3">{(bookmark.content as any)?.response || ""}</p>
+                  <p className="text-xs text-muted-foreground font-medium">Q: {(bookmark.content as any)?.query || (isAr ? "محادثة محفوظة" : "Saved answer")}</p>
+                  <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">{(bookmark.content as any)?.response || ""}</p>
                 </>
               )}
 
@@ -178,11 +213,29 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-1 gap-2">
                 <span className="text-[10px] text-muted-foreground">{new Date(bookmark.created_at).toLocaleDateString()}</span>
-                <button onClick={() => deleteBookmark(bookmark.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setReview(bookmark)}
+                    className="text-xs font-medium text-primary px-2 py-1 rounded-lg hover:bg-primary/10 flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    {isAr ? "مراجعة" : "Review"}
+                  </button>
+                  {(bookmark.type !== "chat") && (
+                    <button
+                      onClick={() => openBookmark(bookmark)}
+                      className="text-xs font-medium text-accent px-2 py-1 rounded-lg hover:bg-accent/10 flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {isAr ? "فتح" : "Open"}
+                    </button>
+                  )}
+                  <button onClick={() => deleteBookmark(bookmark.id)} className="text-muted-foreground hover:text-destructive p-1">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               {(bookmark.content as any)?.note && (
@@ -192,6 +245,72 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
           ))
         )}
       </div>
+
+      {/* Review dialog — full saved content, readable and copyable */}
+      <Dialog open={!!review} onOpenChange={(o) => !o && setReview(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className={isAr ? "font-arabic" : ""}>
+              {review?.type === "chat"
+                ? isAr ? "مراجعة الإجابة" : "Review answer"
+                : review?.type === "audio"
+                  ? isAr ? "تسجيل محفوظ" : "Saved recitation"
+                  : isAr ? "آية محفوظة" : "Saved ayah"}
+            </DialogTitle>
+          </DialogHeader>
+          {review && (
+            <div className="space-y-3">
+              {review.type === "chat" && (
+                <>
+                  {(review.content as any)?.query && (
+                    <div className="bg-muted/50 rounded-xl p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                        {isAr ? "السؤال" : "Question"}
+                      </p>
+                      <p className="text-sm text-foreground">{(review.content as any).query}</p>
+                    </div>
+                  )}
+                  <div className={`prose prose-sm max-w-none text-foreground ${isAr ? "font-arabic" : ""}`}>
+                    <ReactMarkdown>{(review.content as any)?.response || ""}</ReactMarkdown>
+                  </div>
+                </>
+              )}
+              {review.type === "ayahs" && (
+                <>
+                  <p className="font-arabic text-lg leading-loose text-right text-foreground" dir="rtl">
+                    {(review.content as any)?.arabic || ""}
+                  </p>
+                  {(review.content as any)?.translation && (
+                    <p className="text-sm text-muted-foreground italic">{(review.content as any).translation}</p>
+                  )}
+                  <p className="text-xs font-medium text-accent">{(review.content as any)?.reference || ""}</p>
+                </>
+              )}
+              {review.type === "audio" && (
+                <div className="flex items-center gap-3">
+                  <Headphones className="w-10 h-10 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{(review.content as any)?.surahName || ""}</p>
+                    <p className="text-xs text-muted-foreground">{(review.content as any)?.reciterName || ""}</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" size="sm" onClick={copyReview} className="flex-1">
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  {isAr ? "نسخ" : "Copy"}
+                </Button>
+                {review.type !== "chat" && (
+                  <Button variant="hero" size="sm" onClick={() => openBookmark(review)} className="flex-1">
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                    {isAr ? "فتح" : "Open"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
