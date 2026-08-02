@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
-import { addBookmark, removeBookmark, listBookmarks } from "@/lib/bookmarks";
+import { addBookmark, removeBookmark } from "@/lib/bookmarks";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
