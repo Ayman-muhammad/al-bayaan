@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
-import { addBookmark } from "@/lib/bookmarks";
+import { addBookmark, removeBookmark, listBookmarks } from "@/lib/bookmarks";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -14,6 +14,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   bookmarked?: boolean;
+  bookmarkId?: string;
 }
 
 interface ChatInterfaceProps {
@@ -45,20 +46,54 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   }, [messages]);
 
   const toggleBookmark = async (id: string) => {
-    const msg = messages.find((m) => m.id === id);
-    if (!msg) return;
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, bookmarked: !m.bookmarked } : m))
-    );
-    if (!msg.bookmarked) {
-      const idx = messages.findIndex((m) => m.id === id);
-      const query = idx > 0 ? messages[idx - 1]?.content : "";
-      await addBookmark(user?.id, "chat", { query, response: msg.content });
+    const idx = messages.findIndex((m) => m.id === id);
+    const msg = messages[idx];
+    if (!msg || !msg.content.trim()) return;
+
+    // Un-save: remove the stored bookmark so favorites stay in sync.
+    if (msg.bookmarked) {
+      if (msg.bookmarkId) await removeBookmark(user?.id, msg.bookmarkId);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, bookmarked: false, bookmarkId: undefined } : m)),
+      );
+      toast({
+        title: language === "ar" ? "تم الإزالة" : "Removed",
+        description: language === "ar" ? "أُزيلت الإجابة من المفضلة" : "Answer removed from favorites",
+      });
+      return;
     }
-    toast({
-      title: language === "ar" ? "تم الحفظ" : "Saved",
-      description: language === "ar" ? "تم حفظ الإجابة في المفضلة" : "Answer bookmarked for later",
-    });
+
+    // Find the user question that produced this answer.
+    let query = "";
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") { query = messages[i].content; break; }
+    }
+
+    try {
+      const saved = await addBookmark(user?.id, "chat", {
+        query,
+        response: msg.content,
+        note: new Date().toLocaleString(),
+      });
+      if (!saved?.id) throw new Error("save failed");
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, bookmarked: true, bookmarkId: saved.id } : m)),
+      );
+      toast({
+        title: language === "ar" ? "تم الحفظ" : "Saved to Favorites",
+        description:
+          language === "ar"
+            ? "يمكنك مراجعة الإجابة من المفضلة"
+            : "Open Favorites → Chat to review this answer",
+      });
+    } catch {
+      toast({
+        title: language === "ar" ? "تعذر الحفظ" : "Could not save",
+        description:
+          language === "ar" ? "حاول مرة أخرى" : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const sendMessage = async (text: string) => {
