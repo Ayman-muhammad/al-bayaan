@@ -28,6 +28,7 @@ import DownloadManager from "@/components/DownloadManager";
 import Adhkar from "@/components/Adhkar";
 import FamilyCycle from "@/components/FamilyCycle";
 import MorePage from "@/components/MorePage";
+import FamilyBanner from "@/components/FamilyBanner";
 
 type View = "home" | "chat" | "audio" | "quran" | "prayer" | "hafiz" | "favorites" | "journey" | "dhikr" | "scholars" | "dashboard" | "auth" | "journeys" | "admin" | "profile" | "family" | "cycle" | "revert" | "downloads" | "adhkar" | "more";
 
@@ -128,6 +129,9 @@ const Index = () => {
       </div>
 
       <InstallPrompt />
+
+      {/* Persistent reminder banner until each family block is completed */}
+      {currentView !== "cycle" && <FamilyBanner onNavigate={handleNavigate} />}
 
       <BottomNav
         currentView={currentView}
