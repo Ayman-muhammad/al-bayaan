@@ -34,7 +34,8 @@ export const TOTAL_MUSHAF_PAGES = 604;
 const MARKS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/gu;
 
 /** Base (mark-free) letters of the Basmalah, alif variants normalised. */
-const BISMILLAH_BASE = "بسمااللهالرحمنالرحيم"
+const BISMILLAH_BASE = "بسم الله الرحمن الرحيم"
+  .replace(/\s+/gu, "")
   .replace(/[\u0622\u0623\u0625\u0627\u0671]/gu, "ا");
 
 /**
