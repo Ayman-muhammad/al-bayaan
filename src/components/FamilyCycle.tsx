@@ -228,7 +228,78 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
     }
   }
 
+  /**
+   * Family Relay — splits a Quran activity's ayah range evenly across the
+   * assigned members so everyone reads their own portion and the family
+   * finishes the surah together on the same day.
+   */
+  function relayPortions(activity: Activity) {
+    const surah = SURAHS.find((s) => s.id === activity.surah_number);
+    if (!surah) return [];
+    const from = activity.start_ayah ?? 1;
+    const to = activity.end_ayah ?? surah.verses;
+    const assigned = members.filter((m) => activity.assigned_members.includes(m.id));
+    if (assigned.length === 0) return [];
+    const total = Math.max(1, to - from + 1);
+    const chunk = Math.ceil(total / assigned.length);
+    return assigned.map((m, i) => {
+      const start = from + i * chunk;
+      const end = Math.min(to, start + chunk - 1);
+      return { member: m, start, end: Math.max(start, end) };
+    }).filter((p) => p.start <= to);
+  }
+
+  function openRelayPortion(activity: Activity, startAyah: number) {
+    const { view, search } = buildFamilyDeepLink({ ...activity, start_ayah: startAyah });
+    navigate(`/?view=${view}&${search}`);
+    onNavigate(view);
+  }
+
+  async function shareCycle() {
+    if (!cycle) return;
+    const remaining = activities.filter((a) => !completedIds.has(a.id)).map((a) => `• ${a.title}`);
+    const text = isAr
+      ? `${cycle.intention}\nبقي لعائلتنا اليوم:\n${remaining.join("\n") || "لا شيء — تم كل شيء ✅"}`
+      : `${cycle.intention}\nStill open for our family today:\n${remaining.join("\n") || "Nothing — all done ✅"}`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Al-Bayan Family Cycle", text });
+      else {
+        await navigator.clipboard.writeText(text);
+        toast.success(isAr ? "تم نسخ التذكير" : "Reminder copied");
+      }
+    } catch {
+      /* user dismissed */
+    }
+  }
+
   const completedIds = useMemo(() => new Set(completions.map((c) => c.activity_id)), [completions]);
+
+  /** Per-member completions for today — powers the family progress rail. */
+  const memberDone = useMemo(() => {
+    const map: Record<string, number> = {};
+    completions.forEach((c) => {
+      if (c.member_id) map[c.member_id] = (map[c.member_id] ?? 0) + 1;
+    });
+    return map;
+  }, [completions]);
+
+  /** Last 7 days of family activity + the current unbroken streak. */
+  const { week, streak } = useMemo(() => {
+    const byDate = new Set(history.map((c) => c.completion_date));
+    const days: Array<{ date: string; active: boolean }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      days.push({ date: d, active: byDate.has(d) });
+    }
+    let s = 0;
+    for (let i = 0; ; i++) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      if (byDate.has(d)) s++;
+      else break;
+    }
+    return { week: days, streak: s };
+  }, [history]);
+
   const morningActs = activities.filter((a) => a.time_slot === "morning" || a.activity_type === "adhkar_morning");
   const eveningActs = activities.filter((a) => a.time_slot === "evening" || a.activity_type === "adhkar_evening");
   const anytimeActs = activities.filter((a) => a.time_slot === "anytime");
