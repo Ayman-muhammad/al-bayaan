@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play, BookOpenText } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
 import MushafPage from "@/components/MushafPage";
+import MushafPageSpread from "@/components/MushafPageSpread";
+import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
 
@@ -50,6 +52,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [mushafMode, setMushafMode] = useState<boolean>(
     () => localStorage.getItem("al-bayan-mushaf-mode") !== "off",
   );
+  /** Physical printed-Mushaf paging (604 pages) — the real book layout. */
+  const [pageMode, setPageMode] = useState<boolean>(
+    () => localStorage.getItem("al-bayan-page-mode") === "on",
+  );
+  const [mushafPageNum, setMushafPageNum] = useState<number>(
+    () => Math.min(TOTAL_MUSHAF_PAGES, Math.max(1, Number(localStorage.getItem("al-bayan-page-num")) || 1)),
+  );
   const [controlsOpen, setControlsOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
   const deepLinkDone = useRef(false);
@@ -57,6 +66,14 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   useEffect(() => {
     localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
   }, [mushafMode]);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-page-mode", pageMode ? "on" : "off");
+  }, [pageMode]);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-page-num", String(mushafPageNum));
+  }, [mushafPageNum]);
 
   useEffect(() => {
     listBookmarks(user?.id).then(setBookmarks);
