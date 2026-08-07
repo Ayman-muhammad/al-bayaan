@@ -684,6 +684,30 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
                   </Button>
                 </div>
               )}
+              {/* Family Relay — one tap opens each member's own portion */}
+              {!done && a.activity_type === "quran" && relayPortions(a).length > 1 && (
+                <div className="border-t border-border/60 pt-3">
+                  <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    <Repeat2 className="w-3.5 h-3.5" /> {isAr ? "تناوب العائلة" : "Family relay"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {relayPortions(a).map((p) => (
+                      <button
+                        key={p.member.id}
+                        onClick={() => openRelayPortion(a, p.start)}
+                        className="px-2.5 py-1.5 rounded-full text-[11px] border flex items-center gap-1.5"
+                        style={{ borderColor: p.member.color, backgroundColor: p.member.color + "14" }}
+                      >
+                        <span>{p.member.avatar_emoji}</span>
+                        <span className="font-medium">{p.member.name}</span>
+                        <span className="text-muted-foreground">
+                          {p.start}–{p.end}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
