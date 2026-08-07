@@ -101,13 +101,6 @@ export type Database = {
             foreignKeyName: "answers_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "published_questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "answers_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -1030,36 +1023,7 @@ export type Database = {
       }
     }
     Views: {
-      published_questions: {
-        Row: {
-          anonymous: boolean | null
-          category: string | null
-          created_at: string | null
-          id: string | null
-          question_text: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          anonymous?: boolean | null
-          category?: string | null
-          created_at?: string | null
-          id?: string | null
-          question_text?: string | null
-          status?: string | null
-          user_id?: never
-        }
-        Update: {
-          anonymous?: boolean | null
-          category?: string | null
-          created_at?: string | null
-          id?: string | null
-          question_text?: string | null
-          status?: string | null
-          user_id?: never
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       create_family_circle: {
