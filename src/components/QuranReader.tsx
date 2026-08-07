@@ -345,6 +345,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setWordsByAyah({});
     setTadabburOpen({});
     fetchSurah(id);
+    // Keep the printed-page view in sync with the surah the user picked.
+    void pageForAyah(id, 1).then(setMushafPageNum).catch(() => {});
   };
 
   // Deep link: /?view=quran&surah=67&ayah=1 (used by Family Cycle bridging)
@@ -427,7 +429,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setPageMode((v) => !v)}
+                title={pageMode ? (isAr ? "عرض السورة" : "Surah view") : (isAr ? "صفحات المصحف" : "Mushaf pages")}
+                className={pageMode ? "text-accent" : ""}
+              >
+                <BookOpenText className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setMushafMode(!mushafMode)}
+                disabled={pageMode}
                 title={mushafMode ? (isAr ? "عرض الآيات" : "Verse view") : (isAr ? "عرض المصحف" : "Mushaf view")}
               >
                 {mushafMode ? <Rows3 className="w-4 h-4" /> : <ScrollText className="w-4 h-4" />}
