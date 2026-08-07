@@ -962,7 +962,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           <button
             onClick={() => {
               const a = ayahs.find((x) => x.number === activeAyah);
-              if (a && selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+              if (a && selectedSurahId && !pageMode) playAyah(selectedSurahId, a.numberInSurah, a.number);
+              else if (activeMeta && activeAyah !== null) playAyah(activeMeta.surah, activeMeta.ayah, activeAyah);
             }}
             className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
             aria-label={player.isPlaying ? "Pause" : "Play"}
@@ -970,7 +971,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
             {player.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
           <span className="text-xs font-medium text-foreground">
-            {isAr ? "آية" : "Ayah"} {ayahs.find((x) => x.number === activeAyah)?.numberInSurah}
+            {isAr ? "آية" : "Ayah"}{" "}
+            {ayahs.find((x) => x.number === activeAyah)?.numberInSurah ?? activeMeta?.ayah}
           </span>
           <button
             onClick={() => player.setRepeat(!player.repeat)}
