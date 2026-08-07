@@ -64,7 +64,7 @@ function stripBismillah(text: string): string {
 
 const cache = new Map<number, MushafPageData>();
 
-const LS_PREFIX = "al-bayan-mushaf-page-v2-";
+const LS_PREFIX = "al-bayan-mushaf-page-v3-";
 
 function readCached(page: number): MushafPageData | null {
   if (cache.has(page)) return cache.get(page)!;
