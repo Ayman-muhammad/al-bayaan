@@ -30,12 +30,40 @@ export interface MushafPageData {
 
 export const TOTAL_MUSHAF_PAGES = 604;
 
-const BISMILLAH_RE =
-  /^بِسْمِ\s*ٱللَّهِ\s*ٱلرَّحْمَ[ٰـ]?نِ\s*ٱلرَّحِيمِ\s*/u;
+/** Arabic diacritics/quranic marks that vary between prints. */
+const MARKS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/gu;
+
+/** Base (mark-free) letters of the Basmalah, alif variants normalised. */
+const BISMILLAH_BASE = "بسمااللهالرحمنالرحيم"
+  .replace(/[\u0622\u0623\u0625\u0627\u0671]/gu, "ا");
+
+/**
+ * Strips a leading Basmalah regardless of the diacritic style used by the
+ * source print, by comparing mark-free letters instead of exact glyphs.
+ */
+function stripBismillah(text: string): string {
+  let matched = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (MARKS_RE.test(ch) || ch === " ") {
+      MARKS_RE.lastIndex = 0;
+      continue;
+    }
+    MARKS_RE.lastIndex = 0;
+    const base = /[\u0622\u0623\u0625\u0627\u0671]/u.test(ch) ? "ا" : ch;
+    if (base === BISMILLAH_BASE[matched]) {
+      matched++;
+      if (matched === BISMILLAH_BASE.length) return text.slice(i + 1).trim();
+    } else {
+      return text;
+    }
+  }
+  return text;
+}
 
 const cache = new Map<number, MushafPageData>();
 
-const LS_PREFIX = "al-bayan-mushaf-page-";
+const LS_PREFIX = "al-bayan-mushaf-page-v2-";
 
 function readCached(page: number): MushafPageData | null {
   if (cache.has(page)) return cache.get(page)!;
@@ -87,7 +115,7 @@ export async function fetchMushafPage(page: number): Promise<MushafPageData> {
     // Pages that open a surah embed the Basmalah in ayah 1 — pull it out so
     // it can be rendered as its own calligraphic line, like the print.
     if (startsSurah && a.surah.number !== 1 && a.surah.number !== 9) {
-      text = text.replace(BISMILLAH_RE, "");
+      text = stripBismillah(text);
     }
     return {
       number: a.number,
