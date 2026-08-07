@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Heart, Plus, X, Book, Sunrise, Moon as MoonIcon, Sparkles, Coins, Check, ChevronRight, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Heart, Plus, X, Book, Sunrise, Moon as MoonIcon, Sparkles, Coins, Check, ChevronRight, Trash2, Users, Flame, Share2, PlayCircle, Repeat2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { buildFamilyDeepLink } from "@/lib/familyMode";
+import { SURAHS } from "@/data/quranData";
 
 interface Props {
   onBack: () => void;
@@ -90,6 +91,7 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
+  const [history, setHistory] = useState<Completion[]>([]);
 
   // Wizard state
   const [wizardStep, setWizardStep] = useState<0 | 1 | 2>(0);
@@ -131,12 +133,15 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
       const activityIds = (as ?? []).map((a: any) => a.id);
       if (activityIds.length) {
         const today = new Date().toISOString().slice(0, 10);
-        const { data: cs } = await supabase
+        const { data: all } = await supabase
           .from("cycle_completions")
           .select("*")
           .in("activity_id", activityIds)
-          .eq("completion_date", today);
-        setCompletions((cs as Completion[]) ?? []);
+          .order("completion_date", { ascending: false })
+          .limit(1000);
+        const rows = (all as Completion[]) ?? [];
+        setHistory(rows);
+        setCompletions(rows.filter((c) => c.completion_date === today));
       }
     }
     setLoading(false);
