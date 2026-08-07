@@ -626,7 +626,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
         <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}>
-          {!mushafMode && (
+          {!mushafMode && !pageMode && (
             <div className="text-center py-4 space-y-1 border-b border-border/40">
               <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
               <p className="text-sm opacity-70">{selectedSurah.name.en}</p>
@@ -736,7 +736,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           </>
           )}
 
-          {loading ? (
+          {pageMode ? (
+            <MushafPageSpread
+              page={mushafPageNum}
+              onPageChange={setMushafPageNum}
+              prefs={prefs}
+              isAr={isAr}
+              activeAyah={activeAyah}
+              renderText={renderTajweed}
+              onAyahTap={(a) => playAyah(a.surahNumber, a.numberInSurah, a.number)}
+            />
+          ) : loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">{isAr ? "جاري التحميل..." : "Loading..."}</p>
