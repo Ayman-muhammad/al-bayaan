@@ -112,6 +112,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
+  const [activeMeta, setActiveMeta] = useState<{ surah: number; ayah: number } | null>(null);
   const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
   // Per-surah reciter + playback controls
   const RECITERS = [
@@ -181,6 +182,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const playAyah = (surahId: number, ayahNumberInSurah: number, globalNumber: number) => {
     const url = buildAyahAudioUrl(surahId, ayahNumberInSurah);
     setActiveAyah(globalNumber);
+    setActiveMeta({ surah: surahId, ayah: ayahNumberInSurah });
     player.toggle(url);
   };
 
