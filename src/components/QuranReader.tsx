@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, ChevronRight, Loader2, Eye, EyeOff, BookMarked, Download, Volume2, Pause, Lightbulb, Languages, Heart, Repeat, Gauge, Mic2, SlidersHorizontal, Rows3, ScrollText, X, Play, BookOpenText } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { SURAHS } from "@/data/quranData";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
 import MushafPage from "@/components/MushafPage";
+import MushafPageSpread from "@/components/MushafPageSpread";
+import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
 
@@ -50,6 +52,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [mushafMode, setMushafMode] = useState<boolean>(
     () => localStorage.getItem("al-bayan-mushaf-mode") !== "off",
   );
+  /** Physical printed-Mushaf paging (604 pages) — the real book layout. */
+  const [pageMode, setPageMode] = useState<boolean>(
+    () => localStorage.getItem("al-bayan-page-mode") === "on",
+  );
+  const [mushafPageNum, setMushafPageNum] = useState<number>(
+    () => Math.min(TOTAL_MUSHAF_PAGES, Math.max(1, Number(localStorage.getItem("al-bayan-page-num")) || 1)),
+  );
   const [controlsOpen, setControlsOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
   const deepLinkDone = useRef(false);
@@ -57,6 +66,14 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   useEffect(() => {
     localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
   }, [mushafMode]);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-page-mode", pageMode ? "on" : "off");
+  }, [pageMode]);
+
+  useEffect(() => {
+    localStorage.setItem("al-bayan-page-num", String(mushafPageNum));
+  }, [mushafPageNum]);
 
   useEffect(() => {
     listBookmarks(user?.id).then(setBookmarks);
@@ -95,6 +112,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
+  const [activeMeta, setActiveMeta] = useState<{ surah: number; ayah: number } | null>(null);
   const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
   // Per-surah reciter + playback controls
   const RECITERS = [
@@ -164,6 +182,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const playAyah = (surahId: number, ayahNumberInSurah: number, globalNumber: number) => {
     const url = buildAyahAudioUrl(surahId, ayahNumberInSurah);
     setActiveAyah(globalNumber);
+    setActiveMeta({ surah: surahId, ayah: ayahNumberInSurah });
     player.toggle(url);
   };
 
@@ -328,6 +347,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     setWordsByAyah({});
     setTadabburOpen({});
     fetchSurah(id);
+    // Keep the printed-page view in sync with the surah the user picked.
+    void pageForAyah(id, 1).then(setMushafPageNum).catch(() => {});
   };
 
   // Deep link: /?view=quran&surah=67&ayah=1 (used by Family Cycle bridging)
@@ -410,7 +431,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setPageMode((v) => !v)}
+                title={pageMode ? (isAr ? "عرض السورة" : "Surah view") : (isAr ? "صفحات المصحف" : "Mushaf pages")}
+                className={pageMode ? "text-accent" : ""}
+              >
+                <BookOpenText className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setMushafMode(!mushafMode)}
+                disabled={pageMode}
                 title={mushafMode ? (isAr ? "عرض الآيات" : "Verse view") : (isAr ? "عرض المصحف" : "Mushaf view")}
               >
                 {mushafMode ? <Rows3 className="w-4 h-4" /> : <ScrollText className="w-4 h-4" />}
@@ -595,7 +626,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
         <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}>
-          {!mushafMode && (
+          {!mushafMode && !pageMode && (
             <div className="text-center py-4 space-y-1 border-b border-border/40">
               <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
               <p className="text-sm opacity-70">{selectedSurah.name.en}</p>
@@ -705,7 +736,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           </>
           )}
 
-          {loading ? (
+          {pageMode ? (
+            <MushafPageSpread
+              page={mushafPageNum}
+              onPageChange={setMushafPageNum}
+              prefs={prefs}
+              isAr={isAr}
+              activeAyah={activeAyah}
+              renderText={renderTajweed}
+              onAyahTap={(a) => playAyah(a.surahNumber, a.numberInSurah, a.number)}
+            />
+          ) : loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">{isAr ? "جاري التحميل..." : "Loading..."}</p>
@@ -921,7 +962,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           <button
             onClick={() => {
               const a = ayahs.find((x) => x.number === activeAyah);
-              if (a && selectedSurahId) playAyah(selectedSurahId, a.numberInSurah, a.number);
+              if (a && selectedSurahId && !pageMode) playAyah(selectedSurahId, a.numberInSurah, a.number);
+              else if (activeMeta && activeAyah !== null) playAyah(activeMeta.surah, activeMeta.ayah, activeAyah);
             }}
             className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
             aria-label={player.isPlaying ? "Pause" : "Play"}
@@ -929,7 +971,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
             {player.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
           <span className="text-xs font-medium text-foreground">
-            {isAr ? "آية" : "Ayah"} {ayahs.find((x) => x.number === activeAyah)?.numberInSurah}
+            {isAr ? "آية" : "Ayah"}{" "}
+            {ayahs.find((x) => x.number === activeAyah)?.numberInSurah ?? activeMeta?.ayah}
           </span>
           <button
             onClick={() => player.setRepeat(!player.repeat)}

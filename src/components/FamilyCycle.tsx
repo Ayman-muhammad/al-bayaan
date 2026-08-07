@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Heart, Plus, X, Book, Sunrise, Moon as MoonIcon, Sparkles, Coins, Check, ChevronRight, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Heart, Plus, X, Book, Sunrise, Moon as MoonIcon, Sparkles, Coins, Check, ChevronRight, Trash2, Users, Flame, Share2, PlayCircle, Repeat2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { buildFamilyDeepLink } from "@/lib/familyMode";
+import { SURAHS } from "@/data/quranData";
 
 interface Props {
   onBack: () => void;
@@ -90,6 +91,7 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
+  const [history, setHistory] = useState<Completion[]>([]);
 
   // Wizard state
   const [wizardStep, setWizardStep] = useState<0 | 1 | 2>(0);
@@ -131,12 +133,15 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
       const activityIds = (as ?? []).map((a: any) => a.id);
       if (activityIds.length) {
         const today = new Date().toISOString().slice(0, 10);
-        const { data: cs } = await supabase
+        const { data: all } = await supabase
           .from("cycle_completions")
           .select("*")
           .in("activity_id", activityIds)
-          .eq("completion_date", today);
-        setCompletions((cs as Completion[]) ?? []);
+          .order("completion_date", { ascending: false })
+          .limit(1000);
+        const rows = (all as Completion[]) ?? [];
+        setHistory(rows);
+        setCompletions(rows.filter((c) => c.completion_date === today));
       }
     }
     setLoading(false);
@@ -223,7 +228,78 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
     }
   }
 
+  /**
+   * Family Relay — splits a Quran activity's ayah range evenly across the
+   * assigned members so everyone reads their own portion and the family
+   * finishes the surah together on the same day.
+   */
+  function relayPortions(activity: Activity) {
+    const surah = SURAHS.find((s) => s.id === activity.surah_number);
+    if (!surah) return [];
+    const from = activity.start_ayah ?? 1;
+    const to = activity.end_ayah ?? surah.verses;
+    const assigned = members.filter((m) => activity.assigned_members.includes(m.id));
+    if (assigned.length === 0) return [];
+    const total = Math.max(1, to - from + 1);
+    const chunk = Math.ceil(total / assigned.length);
+    return assigned.map((m, i) => {
+      const start = from + i * chunk;
+      const end = Math.min(to, start + chunk - 1);
+      return { member: m, start, end: Math.max(start, end) };
+    }).filter((p) => p.start <= to);
+  }
+
+  function openRelayPortion(activity: Activity, startAyah: number) {
+    const { view, search } = buildFamilyDeepLink({ ...activity, start_ayah: startAyah });
+    navigate(`/?view=${view}&${search}`);
+    onNavigate(view);
+  }
+
+  async function shareCycle() {
+    if (!cycle) return;
+    const remaining = activities.filter((a) => !completedIds.has(a.id)).map((a) => `• ${a.title}`);
+    const text = isAr
+      ? `${cycle.intention}\nبقي لعائلتنا اليوم:\n${remaining.join("\n") || "لا شيء — تم كل شيء ✅"}`
+      : `${cycle.intention}\nStill open for our family today:\n${remaining.join("\n") || "Nothing — all done ✅"}`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Al-Bayan Family Cycle", text });
+      else {
+        await navigator.clipboard.writeText(text);
+        toast.success(isAr ? "تم نسخ التذكير" : "Reminder copied");
+      }
+    } catch {
+      /* user dismissed */
+    }
+  }
+
   const completedIds = useMemo(() => new Set(completions.map((c) => c.activity_id)), [completions]);
+
+  /** Per-member completions for today — powers the family progress rail. */
+  const memberDone = useMemo(() => {
+    const map: Record<string, number> = {};
+    completions.forEach((c) => {
+      if (c.member_id) map[c.member_id] = (map[c.member_id] ?? 0) + 1;
+    });
+    return map;
+  }, [completions]);
+
+  /** Last 7 days of family activity + the current unbroken streak. */
+  const { week, streak } = useMemo(() => {
+    const byDate = new Set(history.map((c) => c.completion_date));
+    const days: Array<{ date: string; active: boolean }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      days.push({ date: d, active: byDate.has(d) });
+    }
+    let s = 0;
+    for (let i = 0; ; i++) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      if (byDate.has(d)) s++;
+      else break;
+    }
+    return { week: days, streak: s };
+  }, [history]);
+
   const morningActs = activities.filter((a) => a.time_slot === "morning" || a.activity_type === "adhkar_morning");
   const eveningActs = activities.filter((a) => a.time_slot === "evening" || a.activity_type === "adhkar_evening");
   const anytimeActs = activities.filter((a) => a.time_slot === "anytime");
@@ -608,6 +684,30 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
                   </Button>
                 </div>
               )}
+              {/* Family Relay — one tap opens each member's own portion */}
+              {!done && a.activity_type === "quran" && relayPortions(a).length > 1 && (
+                <div className="border-t border-border/60 pt-3">
+                  <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    <Repeat2 className="w-3.5 h-3.5" /> {isAr ? "تناوب العائلة" : "Family relay"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {relayPortions(a).map((p) => (
+                      <button
+                        key={p.member.id}
+                        onClick={() => openRelayPortion(a, p.start)}
+                        className="px-2.5 py-1.5 rounded-full text-[11px] border flex items-center gap-1.5"
+                        style={{ borderColor: p.member.color, backgroundColor: p.member.color + "14" }}
+                      >
+                        <span>{p.member.avatar_emoji}</span>
+                        <span className="font-medium">{p.member.name}</span>
+                        <span className="text-muted-foreground">
+                          {p.start}–{p.end}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -636,18 +736,93 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-5 space-y-6 pb-24">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          {members.map((m) => (
-            <span
-              key={m.id}
-              className="px-2.5 py-1 rounded-full text-xs flex items-center gap-1 border"
-              style={{ borderColor: m.color, backgroundColor: m.color + "18" }}
+        {/* Today's family pulse: progress, streak, share */}
+        <section className="rounded-3xl border border-accent/25 bg-gradient-to-br from-accent/10 via-primary/5 to-transparent p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground mb-1.5">
+                {isAr
+                  ? `${completedCount} من ${activities.length} أُنجزت اليوم`
+                  : `${completedCount} of ${activities.length} done today`}
+              </p>
+              <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-card border border-border">
+              <Flame className={`w-4 h-4 ${streak > 0 ? "text-accent" : "text-muted-foreground"}`} />
+              <span className="text-sm font-bold">{streak}</span>
+            </div>
+            <button
+              onClick={shareCycle}
+              className="p-2.5 rounded-2xl bg-card border border-border text-muted-foreground hover:text-foreground"
+              aria-label={isAr ? "شارك" : "Share"}
             >
-              <span>{m.avatar_emoji}</span> {m.name}
-            </span>
-          ))}
-        </div>
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* 7-day family streak strip */}
+          <div className="flex items-center gap-1.5">
+            {week.map((d) => (
+              <span
+                key={d.date}
+                title={d.date}
+                className={`flex-1 h-1.5 rounded-full ${d.active ? "bg-accent" : "bg-muted"}`}
+              />
+            ))}
+          </div>
+
+          {/* Member rail with today's contribution count */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            {members.map((m) => (
+              <span
+                key={m.id}
+                className="px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 border"
+                style={{ borderColor: m.color, backgroundColor: m.color + "18" }}
+              >
+                <span>{m.avatar_emoji}</span> {m.name}
+                {memberDone[m.id] ? (
+                  <span className="text-[10px] font-bold text-primary">+{memberDone[m.id]}</span>
+                ) : null}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* Continue where the family left off — never a dead end */}
+        {(() => {
+          const next = activities.find((a) => !completedIds.has(a.id));
+          if (!next) {
+            return (
+              <div className="rounded-3xl border border-primary/40 bg-primary/5 p-4 text-center">
+                <Check className="w-6 h-6 mx-auto text-primary mb-1" />
+                <p className="text-sm font-semibold">
+                  {isAr ? "ما شاء الله — أكملت العائلة اليوم" : "MashaAllah — your family finished today"}
+                </p>
+              </div>
+            );
+          }
+          return (
+            <button
+              onClick={() => openActivity(next)}
+              className="w-full rounded-3xl border border-border bg-card p-4 flex items-center gap-3 text-left hover:border-accent/50 transition-colors"
+            >
+              <PlayCircle className="w-9 h-9 text-accent shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {isAr ? "أكملوا من حيث توقفتم" : "Continue where you left off"}
+                </p>
+                <p className={`font-semibold text-sm truncate ${isAr ? "font-arabic" : ""}`}>{next.title}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+            </button>
+          );
+        })()}
 
         {renderBlock(isAr ? "الصباح" : "Morning", Sunrise, morningActs)}
         {renderBlock(isAr ? "المساء" : "Evening", MoonIcon, eveningActs)}
