@@ -736,18 +736,93 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-5 space-y-6 pb-24">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          {members.map((m) => (
-            <span
-              key={m.id}
-              className="px-2.5 py-1 rounded-full text-xs flex items-center gap-1 border"
-              style={{ borderColor: m.color, backgroundColor: m.color + "18" }}
+        {/* Today's family pulse: progress, streak, share */}
+        <section className="rounded-3xl border border-accent/25 bg-gradient-to-br from-accent/10 via-primary/5 to-transparent p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground mb-1.5">
+                {isAr
+                  ? `${completedCount} من ${activities.length} أُنجزت اليوم`
+                  : `${completedCount} of ${activities.length} done today`}
+              </p>
+              <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-card border border-border">
+              <Flame className={`w-4 h-4 ${streak > 0 ? "text-accent" : "text-muted-foreground"}`} />
+              <span className="text-sm font-bold">{streak}</span>
+            </div>
+            <button
+              onClick={shareCycle}
+              className="p-2.5 rounded-2xl bg-card border border-border text-muted-foreground hover:text-foreground"
+              aria-label={isAr ? "شارك" : "Share"}
             >
-              <span>{m.avatar_emoji}</span> {m.name}
-            </span>
-          ))}
-        </div>
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* 7-day family streak strip */}
+          <div className="flex items-center gap-1.5">
+            {week.map((d) => (
+              <span
+                key={d.date}
+                title={d.date}
+                className={`flex-1 h-1.5 rounded-full ${d.active ? "bg-accent" : "bg-muted"}`}
+              />
+            ))}
+          </div>
+
+          {/* Member rail with today's contribution count */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            {members.map((m) => (
+              <span
+                key={m.id}
+                className="px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 border"
+                style={{ borderColor: m.color, backgroundColor: m.color + "18" }}
+              >
+                <span>{m.avatar_emoji}</span> {m.name}
+                {memberDone[m.id] ? (
+                  <span className="text-[10px] font-bold text-primary">+{memberDone[m.id]}</span>
+                ) : null}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* Continue where the family left off — never a dead end */}
+        {(() => {
+          const next = activities.find((a) => !completedIds.has(a.id));
+          if (!next) {
+            return (
+              <div className="rounded-3xl border border-primary/40 bg-primary/5 p-4 text-center">
+                <Check className="w-6 h-6 mx-auto text-primary mb-1" />
+                <p className="text-sm font-semibold">
+                  {isAr ? "ما شاء الله — أكملت العائلة اليوم" : "MashaAllah — your family finished today"}
+                </p>
+              </div>
+            );
+          }
+          return (
+            <button
+              onClick={() => openActivity(next)}
+              className="w-full rounded-3xl border border-border bg-card p-4 flex items-center gap-3 text-left hover:border-accent/50 transition-colors"
+            >
+              <PlayCircle className="w-9 h-9 text-accent shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {isAr ? "أكملوا من حيث توقفتم" : "Continue where you left off"}
+                </p>
+                <p className={`font-semibold text-sm truncate ${isAr ? "font-arabic" : ""}`}>{next.title}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+            </button>
+          );
+        })()}
 
         {renderBlock(isAr ? "الصباح" : "Morning", Sunrise, morningActs)}
         {renderBlock(isAr ? "المساء" : "Evening", MoonIcon, eveningActs)}
