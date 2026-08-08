@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -14,21 +14,25 @@ interface Props {
   ready?: boolean;
   /** Hint shown when not ready. */
   notReadyHint?: string;
+  /**
+   * When true the completion is logged automatically the moment the activity
+   * is finished inside the app — the user never has to tap "done".
+   */
+  auto?: boolean;
 }
 
 /**
  * Floating gold "Mark as Family Done" action + member selector sheet +
  * confetti + auto-return to the Family Cycle. Shared by every bridged screen.
  */
-const FamilyDoneButton = ({ family, label, ready = true, notReadyHint }: Props) => {
+const FamilyDoneButton = ({ family, label, ready = true, notReadyHint, auto = false }: Props) => {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
-
-  if (!family.active) return null;
+  const autoFired = useRef(false);
 
   const memberIds = family.members.map((m) => m.id);
   const chosen = selected ?? memberIds;
@@ -36,25 +40,40 @@ const FamilyDoneButton = ({ family, label, ready = true, notReadyHint }: Props) 
   const toggle = (id: string) =>
     setSelected(chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id]);
 
-  const confirm = async () => {
+  const confirm = async (ids: string[] = chosen, silentSheet = false) => {
     setSaving(true);
-    const ok = await family.complete(chosen);
+    const ok = await family.complete(ids);
     setSaving(false);
     if (!ok) {
       toast.error(isAr ? "تعذّر التسجيل" : "Could not save completion");
+      autoFired.current = false;
       return;
     }
     setOpen(false);
     setCelebrate(true);
-    const names = family.members.filter((m) => chosen.includes(m.id)).map((m) => m.name);
+    const names = family.members.filter((m) => ids.includes(m.id)).map((m) => m.name);
     toast.success(
-      isAr
+      silentSheet
+        ? isAr
+          ? `✅ ${label} — سجّلها التطبيق تلقائياً للعائلة`
+          : `✅ ${label} completed — auto-logged for your family`
+        : isAr
         ? `✅ ${label} — تم للعائلة${names.length ? ` (${names.join("، ")})` : ""}`
         : `✅ ${label} marked complete${names.length ? ` for ${names.join(", ")}` : ""}!`,
     );
     if (navigator.vibrate) navigator.vibrate([40, 30, 60]);
     setTimeout(() => family.exit(), 2000);
   };
+
+  // Auto-completion: fired once the in-app activity finishes.
+  useEffect(() => {
+    if (!family.active || !auto || !ready || autoFired.current || family.completed) return;
+    autoFired.current = true;
+    void confirm(memberIds, true);
+     
+  }, [family.active, auto, ready, family.completed, memberIds.join(",")]);
+
+  if (!family.active) return null;
 
   return (
     <>
@@ -76,8 +95,11 @@ const FamilyDoneButton = ({ family, label, ready = true, notReadyHint }: Props) 
 
       <button
         onClick={() => (ready ? setOpen(true) : toast.info(notReadyHint || ""))}
+        hidden={auto}
         aria-label={isAr ? "علّم كمكتمل للعائلة" : "Mark as Family Done"}
-        className={`fixed right-4 bottom-28 md:bottom-8 z-[90] h-14 w-14 rounded-full shadow-xl flex items-center justify-center transition-transform active:scale-95 ${
+        className={`fixed right-4 bottom-28 md:bottom-8 z-[90] h-14 w-14 rounded-full shadow-xl items-center justify-center transition-transform active:scale-95 ${
+          auto ? "hidden" : "flex"
+        } ${
           ready
             ? "bg-gradient-to-br from-accent to-primary text-accent-foreground hover:scale-105 animate-pulse-slow"
             : "bg-muted text-muted-foreground"
@@ -128,7 +150,7 @@ const FamilyDoneButton = ({ family, label, ready = true, notReadyHint }: Props) 
 
           <div className="flex gap-2 pb-2">
             <Button
-              onClick={confirm}
+              onClick={() => confirm()}
               disabled={saving}
               className="flex-1 h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-accent to-primary"
             >
