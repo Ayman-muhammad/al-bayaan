@@ -62,6 +62,18 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
   const deepLinkDone = useRef(false);
+  /**
+   * Family Cycle: the reading itself is the completion signal — when the reader
+   * reaches the end of the assigned portion the system logs it automatically.
+   */
+  const [readCovered, setReadCovered] = useState(false);
+  const onReadScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) setReadCovered(true);
+  };
+  useEffect(() => {
+    setReadCovered(false);
+  }, [selectedSurahId, mushafPageNum]);
 
   useEffect(() => {
     localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
@@ -625,7 +637,10 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
       {/* === READ SURAH === */}
       {screen === "read" && selectedSurah && (
-        <div className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}>
+        <div
+          onScroll={onReadScroll}
+          className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}
+        >
           {!mushafMode && !pageMode && (
             <div className="text-center py-4 space-y-1 border-b border-border/40">
               <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
@@ -989,6 +1004,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
 
       <FamilyDoneButton
         family={family}
+        auto
+        ready={screen === "read" && readCovered}
         label={
           selectedSurah
             ? `${isAr ? "سورة" : "Surah"} ${isAr ? selectedSurah.name.ar : selectedSurah.name.en}`
