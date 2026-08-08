@@ -71,9 +71,6 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     const el = e.currentTarget;
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) setReadCovered(true);
   };
-  useEffect(() => {
-    setReadCovered(false);
-  }, [selectedSurahId, mushafPageNum]);
 
   useEffect(() => {
     localStorage.setItem("al-bayan-mushaf-mode", mushafMode ? "on" : "off");
@@ -125,6 +122,10 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [downloading, setDownloading] = useState(false);
   const [activeAyah, setActiveAyah] = useState<number | null>(null);
   const [activeMeta, setActiveMeta] = useState<{ surah: number; ayah: number } | null>(null);
+
+  useEffect(() => {
+    setReadCovered(false);
+  }, [selectedSurahId, mushafPageNum]);
   const [translationMode, setTranslationMode] = useState<TranslationMode>("full");
   // Per-surah reciter + playback controls
   const RECITERS = [
