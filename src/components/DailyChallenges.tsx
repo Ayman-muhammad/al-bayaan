@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Target, CheckCircle2, Award, Flame, BookOpen, Headphones, Star } from "lucide-react";
+import { Target, CheckCircle2, Award, BookOpen, Headphones } from "lucide-react";
 import badgeFirstStep from "@/assets/badges/badge-first-step.png";
 import badgeStreak from "@/assets/badges/badge-streak.png";
 import badgeDevotee from "@/assets/badges/badge-devotee.png";
