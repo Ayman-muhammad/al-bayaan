@@ -940,7 +940,7 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
         ready={!!activePreset && count >= activePreset.target}
         label={
           activePreset
-            ? `${isAr ? activePreset.textAr : activePreset.translitEn} × ${activePreset.target}`
+            ? `${isAr ? activePreset.labelAr : activePreset.translitEn} × ${activePreset.target}`
             : isAr ? "ذكر" : "Dhikr"
         }
       />
