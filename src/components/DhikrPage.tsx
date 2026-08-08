@@ -480,6 +480,7 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
   const { language } = useLanguage();
   const { toast } = useToast();
   const isAr = language === "ar";
+  const family = useFamilyMode();
 
   const [screen, setScreen] = useState<Screen>("menu");
   const [activePreset, setActivePreset] = useState<DhikrPreset | null>(null);
@@ -488,6 +489,18 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
   const [duaFilter, setDuaFilter] = useState("");
   const [selectedDua, setSelectedDua] = useState<Dua | null>(null);
   const milestoneRef = useRef<number>(0);
+
+  /** Family Cycle bridging: open the tasbih on the assigned target immediately. */
+  useEffect(() => {
+    if (!family.active || !family.dhikrTarget || activePreset) return;
+    const target = family.dhikrTarget;
+    const preset =
+      DHIKR_PRESETS.find((p) => p.target === target) ?? { ...DHIKR_PRESETS[0], target };
+    setActivePreset(preset);
+    setCount(0);
+    setScreen("tasbih");
+     
+  }, [family.active, family.dhikrTarget]);
 
   // Load saved session total from localStorage
   useEffect(() => {
