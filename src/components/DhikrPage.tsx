@@ -11,6 +11,8 @@ import {
   Volume2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFamilyMode } from "@/lib/familyMode";
+import FamilyDoneButton from "@/components/FamilyDoneButton";
 
 interface DhikrPageProps {
   onBack: () => void;
