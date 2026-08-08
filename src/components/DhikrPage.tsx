@@ -11,6 +11,8 @@ import {
   Volume2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFamilyMode } from "@/lib/familyMode";
+import FamilyDoneButton from "@/components/FamilyDoneButton";
 
 interface DhikrPageProps {
   onBack: () => void;
@@ -480,6 +482,7 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
   const { language } = useLanguage();
   const { toast } = useToast();
   const isAr = language === "ar";
+  const family = useFamilyMode();
 
   const [screen, setScreen] = useState<Screen>("menu");
   const [activePreset, setActivePreset] = useState<DhikrPreset | null>(null);
@@ -488,6 +491,18 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
   const [duaFilter, setDuaFilter] = useState("");
   const [selectedDua, setSelectedDua] = useState<Dua | null>(null);
   const milestoneRef = useRef<number>(0);
+
+  /** Family Cycle bridging: open the tasbih on the assigned target immediately. */
+  useEffect(() => {
+    if (!family.active || !family.dhikrTarget || activePreset) return;
+    const target = family.dhikrTarget;
+    const preset =
+      DHIKR_PRESETS.find((p) => p.target === target) ?? { ...DHIKR_PRESETS[0], target };
+    setActivePreset(preset);
+    setCount(0);
+    setScreen("tasbih");
+     
+  }, [family.active, family.dhikrTarget]);
 
   // Load saved session total from localStorage
   useEffect(() => {
@@ -918,6 +933,17 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
           </div>
         </div>
       )}
+
+      <FamilyDoneButton
+        family={family}
+        auto
+        ready={!!activePreset && count >= activePreset.target}
+        label={
+          activePreset
+            ? `${isAr ? activePreset.labelAr : activePreset.translitEn} × ${activePreset.target}`
+            : isAr ? "ذكر" : "Dhikr"
+        }
+      />
     </div>
   );
 };

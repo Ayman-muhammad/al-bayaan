@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyMode } from "@/lib/familyMode";
+import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { MORNING_ADHKAR, EVENING_ADHKAR, type DhikrItem } from "@/data/adhkar";
 
 interface Props {
@@ -22,10 +22,9 @@ type Mode = "morning" | "evening";
  */
 const Adhkar = ({ onBack }: Props) => {
   const { language } = useLanguage();
-  const { user } = useAuth();
   const isAr = language === "ar";
   const [params, setParams] = useSearchParams();
-  const familyActivityId = params.get("familyCycle");
+  const family = useFamilyMode();
   const initialMode = (params.get("type") as Mode) || "morning";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -52,24 +51,13 @@ const Adhkar = ({ onBack }: Props) => {
 
   const reset = () => setCounts({});
 
-  const markFamilyDone = async () => {
-    if (!user || !familyActivityId) {
-      toast.success(isAr ? "أكملت الأذكار" : "Adhkar complete!");
-      return;
+  // Solo mode: celebrate in-app once every dhikr of the set is finished.
+  useEffect(() => {
+    if (allDone && !family.active) {
+      toast.success(isAr ? "أكملت الأذكار ✅" : "Adhkar complete ✅");
     }
-    const { error } = await supabase.from("cycle_completions").insert({
-      activity_id: familyActivityId,
-      completed_by: user.id,
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success(
-      isAr ? "✅ تم تسجيل الأذكار للعائلة" : "✅ Marked complete for family!"
-    );
-    setTimeout(() => onBack(), 1500);
-  };
+     
+  }, [allDone, family.active]);
 
   const title = useMemo(
     () =>
@@ -174,25 +162,32 @@ const Adhkar = ({ onBack }: Props) => {
         })}
       </main>
 
-      {(allDone || familyActivityId) && (
+      {allDone && (
         <div
           className="sticky bottom-16 md:bottom-4 z-40 px-4"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="max-w-2xl mx-auto">
-            <Button
-              onClick={markFamilyDone}
-              disabled={!allDone && !familyActivityId}
-              className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg"
-            >
-              <Check className="w-5 h-5 mr-2" />
-              {familyActivityId
-                ? (isAr ? "علّم كمكتمل للعائلة" : "Mark as Family Done")
-                : (isAr ? "أكملت الأذكار" : "Complete Adhkar")}
-            </Button>
+          <div className="max-w-2xl mx-auto rounded-2xl bg-primary/10 border border-primary/30 px-4 py-3 flex items-center gap-2">
+            <Check className="w-5 h-5 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
+              {family.active
+                ? isAr
+                  ? "تم تسجيل الأذكار للعائلة تلقائياً"
+                  : "Auto-logged for your family"
+                : isAr
+                  ? "أكملت الأذكار — تقبّل الله"
+                  : "Adhkar complete — may Allah accept it"}
+            </span>
           </div>
         </div>
       )}
+
+      <FamilyDoneButton
+        family={family}
+        auto
+        ready={allDone}
+        label={title}
+      />
     </div>
   );
 };

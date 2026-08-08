@@ -16,6 +16,12 @@ export interface FamilyModeState {
   members: FamilyModeMember[];
   dayNumber: number | null;
   durationDays: number | null;
+  /** Assigned portion for this bridged activity, when the deep link carries one. */
+  range: { surah: number | null; from: number | null; to: number | null };
+  /** Dhikr target carried by the deep link, when present. */
+  dhikrTarget: number | null;
+  /** True once this session has logged the completion (prevents duplicates). */
+  completed: boolean;
   complete: (memberIds: string[]) => Promise<boolean>;
   exit: () => void;
 }
@@ -38,6 +44,15 @@ export function useFamilyMode(): FamilyModeState {
   const [members, setMembers] = useState<FamilyModeMember[]>([]);
   const [dayNumber, setDayNumber] = useState<number | null>(null);
   const [durationDays, setDurationDays] = useState<number | null>(null);
+  const [completed, setCompleted] = useState(false);
+
+  const num = (v: string | null) => (v && !Number.isNaN(Number(v)) ? Number(v) : null);
+  const range = {
+    surah: num(params.get("surah")),
+    from: num(params.get("ayah")),
+    to: num(params.get("toAyah")),
+  };
+  const dhikrTarget = num(params.get("target"));
 
   useEffect(() => {
     if (!active || !activityId || !user) return;
@@ -89,6 +104,7 @@ export function useFamilyMode(): FamilyModeState {
         completed_by: user.id,
       }));
       const { error } = await supabase.from("cycle_completions").insert(rows);
+      if (!error) setCompleted(true);
       return !error;
     },
     [activityId, user],
@@ -98,7 +114,18 @@ export function useFamilyMode(): FamilyModeState {
     navigate("/", { replace: true });
   }, [navigate]);
 
-  return { active, activityId, members, dayNumber, durationDays, complete, exit };
+  return {
+    active,
+    activityId,
+    members,
+    dayNumber,
+    durationDays,
+    range,
+    dhikrTarget,
+    completed,
+    complete,
+    exit,
+  };
 }
 
 /** Builds the deep link for an activity so bridging stays consistent everywhere. */
@@ -107,6 +134,7 @@ export function buildFamilyDeepLink(activity: {
   activity_type: string;
   surah_number?: number | null;
   start_ayah?: number | null;
+  end_ayah?: number | null;
   dhikr_target?: number | null;
 }): { view: string; search: string } {
   const p = new URLSearchParams({ familyMode: "true", activityId: activity.id });
@@ -114,6 +142,7 @@ export function buildFamilyDeepLink(activity: {
     case "quran":
       if (activity.surah_number) p.set("surah", String(activity.surah_number));
       if (activity.start_ayah) p.set("ayah", String(activity.start_ayah));
+      if (activity.end_ayah) p.set("toAyah", String(activity.end_ayah));
       return { view: "quran", search: p.toString() };
     case "adhkar_morning":
       p.set("type", "morning");

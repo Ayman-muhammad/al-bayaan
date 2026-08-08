@@ -249,8 +249,12 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
     }).filter((p) => p.start <= to);
   }
 
-  function openRelayPortion(activity: Activity, startAyah: number) {
-    const { view, search } = buildFamilyDeepLink({ ...activity, start_ayah: startAyah });
+  function openRelayPortion(activity: Activity, startAyah: number, endAyah?: number) {
+    const { view, search } = buildFamilyDeepLink({
+      ...activity,
+      start_ayah: startAyah,
+      end_ayah: endAyah ?? activity.end_ayah,
+    });
     navigate(`/?view=${view}&${search}`);
     onNavigate(view);
   }
@@ -694,7 +698,7 @@ const FamilyCycle = ({ onBack, onNavigate }: Props) => {
                     {relayPortions(a).map((p) => (
                       <button
                         key={p.member.id}
-                        onClick={() => openRelayPortion(a, p.start)}
+                        onClick={() => openRelayPortion(a, p.start, p.end)}
                         className="px-2.5 py-1.5 rounded-full text-[11px] border flex items-center gap-1.5"
                         style={{ borderColor: p.member.color, backgroundColor: p.member.color + "14" }}
                       >
