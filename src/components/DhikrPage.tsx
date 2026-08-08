@@ -933,6 +933,17 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
           </div>
         </div>
       )}
+
+      <FamilyDoneButton
+        family={family}
+        auto
+        ready={!!activePreset && count >= activePreset.target}
+        label={
+          activePreset
+            ? `${isAr ? activePreset.textAr : activePreset.translitEn} × ${activePreset.target}`
+            : isAr ? "ذكر" : "Dhikr"
+        }
+      />
     </div>
   );
 };
