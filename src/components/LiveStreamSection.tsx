@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Radio, Play, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Radio, Play, ExternalLink, Volume2, VolumeX, Maximize2 } from "lucide-react";
 import meccaImg from "@/assets/kaaba-hero.jpg";
 import medinaImg from "@/assets/medina-mosque.jpg";
+
+/**
+ * Official 24/7 embeds provided for Al-Bayan.
+ * Params are kept exactly as supplied: no related videos, no branding,
+ * inline playback on mobile — muted first frame so autoplay is never blocked.
+ */
+const EMBED_PARAMS = "rel=0&modestbranding=1&playsinline=1&iv_load_policy=3";
 
 const STREAMS = [
   {
@@ -28,6 +34,10 @@ const LiveStreamSection = () => {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [activeStream, setActiveStream] = useState<string | null>(null);
+  const [muted, setMuted] = useState(true);
+
+  const embedSrc = (id: string) =>
+    `https://www.youtube.com/embed/${id}?autoplay=1&mute=${muted ? 1 : 0}&${EMBED_PARAMS}`;
 
   return (
     <section className="py-10 px-4">
@@ -41,6 +51,11 @@ const LiveStreamSection = () => {
             {isAr ? "البث المباشر" : "Live Streams"}
           </h2>
         </div>
+        <p className={`text-center text-sm text-muted-foreground -mt-3 ${isAr ? "font-arabic" : ""}`}>
+          {isAr
+            ? "بث مستمر ٢٤ ساعة من الحرمين الشريفين"
+            : "Continuous 24/7 coverage from the two Holy Mosques"}
+        </p>
 
         <div className="grid md:grid-cols-2 gap-4">
           {STREAMS.map((stream, i) => (
@@ -50,14 +65,35 @@ const LiveStreamSection = () => {
               style={{ animationDelay: `${i * 120}ms`, animationFillMode: "both" }}
             >
               {activeStream === stream.id ? (
-                <div className="relative aspect-video bg-black">
+                <div className="relative aspect-video bg-foreground/95">
                   <iframe
-                    src={`https://www.youtube.com/embed/${stream.youtubeId}?autoplay=1&mute=1`}
+                    key={`${stream.id}-${muted ? "m" : "s"}`}
+                    id={`live-frame-${stream.id}`}
+                    src={embedSrc(stream.youtubeId)}
                     className="absolute inset-0 w-full h-full"
-                    allow="autoplay; encrypted-media"
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
                     title={stream.label.en}
                   />
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
+                    <button
+                      onClick={() => setMuted((m) => !m)}
+                      aria-label={muted ? "Unmute stream" : "Mute stream"}
+                      className="h-9 w-9 rounded-full bg-card/85 backdrop-blur-md border border-border flex items-center justify-center text-foreground hover:text-primary transition-colors"
+                    >
+                      {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() =>
+                        document.getElementById(`live-frame-${stream.id}`)?.requestFullscreen?.()
+                      }
+                      aria-label="Fullscreen"
+                      className="h-9 w-9 rounded-full bg-card/85 backdrop-blur-md border border-border flex items-center justify-center text-foreground hover:text-primary transition-colors"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
@@ -82,6 +118,9 @@ const LiveStreamSection = () => {
                     <span className="w-1.5 h-1.5 bg-destructive-foreground rounded-full animate-pulse" />
                     LIVE
                   </div>
+                  <div className="absolute top-3 right-3 rounded-full bg-card/85 backdrop-blur-md border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                    24/7
+                  </div>
                 </button>
               )}
 
@@ -98,10 +137,14 @@ const LiveStreamSection = () => {
                   href={stream.externalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  aria-label={isAr ? "شاهد على يوتيوب" : "Watch on YouTube"}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExternalLink className="w-4 h-4" />
+                  <span className={isAr ? "font-arabic" : ""}>
+                    {isAr ? "يوتيوب" : "YouTube"}
+                  </span>
                 </a>
               </div>
             </div>

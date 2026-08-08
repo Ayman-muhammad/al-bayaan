@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Target, CheckCircle2, Award, Flame, BookOpen, Headphones, Star } from "lucide-react";
+import { Target, CheckCircle2, Award, BookOpen, Headphones } from "lucide-react";
+import badgeFirstStep from "@/assets/badges/badge-first-step.png";
+import badgeStreak from "@/assets/badges/badge-streak.png";
+import badgeDevotee from "@/assets/badges/badge-devotee.png";
+import badgeReader from "@/assets/badges/badge-reader.png";
+import badgeMilestone from "@/assets/badges/badge-milestone.png";
+import badgeMaster from "@/assets/badges/badge-master.png";
 
 // Daily challenges are derived from the same activity signals MyJourney uses.
 // Progress is inferred so this component is self-contained.
@@ -26,7 +32,8 @@ interface Challenge {
 
 interface Badge {
   id: string;
-  icon: React.ComponentType<{ className?: string }>;
+  /** Illustrated medallion artwork (no emojis anywhere in the badge system). */
+  art: string;
   title: { en: string; ar: string };
   earned: boolean;
   hint?: { en: string; ar: string };
@@ -81,12 +88,12 @@ const DailyChallenges = ({ stats }: Props) => {
   ], [stats]);
 
   const badges: Badge[] = useMemo(() => [
-    { id: "first-step", icon: Star, title: { en: "First Step", ar: "الخطوة الأولى" }, earned: stats.totalMastered >= 1, hint: { en: "Master your first ayah", ar: "أتقن أول آية" } },
-    { id: "week-warrior", icon: Flame, title: { en: "7-Day Streak", ar: "٧ أيام" }, earned: stats.streak >= 7, hint: { en: "Practice 7 days in a row", ar: "تدرّب ٧ أيام" } },
-    { id: "month-devotee", icon: Award, title: { en: "30-Day Devotee", ar: "٣٠ يوم" }, earned: stats.streak >= 30, hint: { en: "One full month", ar: "شهر كامل" } },
-    { id: "juz-30", icon: BookOpen, title: { en: "Juz 30 Reader", ar: "قارئ جزء عمّ" }, earned: stats.surahsRead >= 37, hint: { en: "Read every surah of Juz 30", ar: "اقرأ سور جزء عم" } },
-    { id: "hafiz-10", icon: Target, title: { en: "10 Ayahs Mastered", ar: "١٠ آيات" }, earned: stats.totalMastered >= 10, hint: { en: "", ar: "" } },
-    { id: "hafiz-100", icon: Award, title: { en: "100 Ayahs Mastered", ar: "١٠٠ آية" }, earned: stats.totalMastered >= 100, hint: { en: "", ar: "" } },
+    { id: "first-step", art: badgeFirstStep, title: { en: "First Step", ar: "الخطوة الأولى" }, earned: stats.totalMastered >= 1, hint: { en: "Master your first ayah", ar: "أتقن أول آية" } },
+    { id: "week-warrior", art: badgeStreak, title: { en: "7-Day Streak", ar: "٧ أيام" }, earned: stats.streak >= 7, hint: { en: "Practice 7 days in a row", ar: "تدرّب ٧ أيام" } },
+    { id: "month-devotee", art: badgeDevotee, title: { en: "30-Day Devotee", ar: "٣٠ يوم" }, earned: stats.streak >= 30, hint: { en: "One full month", ar: "شهر كامل" } },
+    { id: "juz-30", art: badgeReader, title: { en: "Juz 30 Reader", ar: "قارئ جزء عمّ" }, earned: stats.surahsRead >= 37, hint: { en: "Read every surah of Juz 30", ar: "اقرأ سور جزء عم" } },
+    { id: "hafiz-10", art: badgeMilestone, title: { en: "10 Ayahs Mastered", ar: "١٠ آيات" }, earned: stats.totalMastered >= 10, hint: { en: "Master 10 ayahs", ar: "أتقن ١٠ آيات" } },
+    { id: "hafiz-100", art: badgeMaster, title: { en: "100 Ayahs Mastered", ar: "١٠٠ آية" }, earned: stats.totalMastered >= 100, hint: { en: "Master 100 ayahs", ar: "أتقن ١٠٠ آية" } },
   ], [stats]);
 
   return (
@@ -163,8 +170,19 @@ const DailyChallenges = ({ stats }: Props) => {
               }`}
               title={b.hint ? (isAr ? b.hint.ar : b.hint.en) : ""}
             >
-              <div className={`w-9 h-9 rounded-full mx-auto flex items-center justify-center mb-1.5 ${b.earned ? "bg-accent/20 text-accent" : "bg-muted text-muted-foreground"}`}>
-                <b.icon className="w-4 h-4" />
+              <div className="w-12 h-12 mx-auto mb-1.5 flex items-center justify-center">
+                <img
+                  src={b.art}
+                  alt={isAr ? b.title.ar : b.title.en}
+                  loading="lazy"
+                  width={512}
+                  height={512}
+                  className={`w-12 h-12 object-contain transition-all duration-500 ${
+                    b.earned
+                      ? "drop-shadow-[0_2px_10px_hsl(var(--accent)/0.45)]"
+                      : "grayscale opacity-50"
+                  }`}
+                />
               </div>
               <p className={`text-[11px] font-semibold text-foreground leading-tight ${isAr ? "font-arabic" : ""}`}>
                 {isAr ? b.title.ar : b.title.en}
