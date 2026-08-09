@@ -724,6 +724,54 @@ export type Database = {
         }
         Relationships: []
       }
+      live_streams: {
+        Row: {
+          active: boolean
+          created_at: string
+          desc_ar: string
+          desc_en: string
+          embed_params: string
+          external_url: string | null
+          id: string
+          label_ar: string
+          label_en: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          youtube_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          desc_ar?: string
+          desc_en?: string
+          embed_params?: string
+          external_url?: string | null
+          id?: string
+          label_ar?: string
+          label_en: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          youtube_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          desc_ar?: string
+          desc_en?: string
+          embed_params?: string
+          external_url?: string | null
+          id?: string
+          label_ar?: string
+          label_en?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          youtube_id?: string
+        }
+        Relationships: []
+      }
       memorization_progress: {
         Row: {
           accuracy_score: number | null
