@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Users, Activity, Search, Crown } from "lucide-react";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import LiveStreamsAdmin from "@/components/admin/LiveStreamsAdmin";
 
 interface Profile {
   id: string;
@@ -18,7 +19,7 @@ interface Props { onBack: () => void; }
 
 const AdminPanel = ({ onBack }: Props) => {
   const { isAdmin, loading: roleLoading } = useIsAdmin();
-  const [tab, setTab] = useState<"users" | "admins" | "events">("users");
+  const [tab, setTab] = useState<"users" | "admins" | "events" | "streams">("users");
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -62,7 +63,6 @@ const AdminPanel = ({ onBack }: Props) => {
         <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-5 h-5" /></Button>
         <Shield className="w-5 h-5 text-primary" />
         <h1 className="font-semibold">Admin Panel</h1>
-        <span className="ml-auto text-xs text-muted-foreground">Read-only</span>
       </header>
 
       <div className="max-w-5xl mx-auto p-4 space-y-4">
@@ -75,7 +75,7 @@ const AdminPanel = ({ onBack }: Props) => {
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-muted rounded-lg">
-          {(["users", "admins", "events"] as const).map((k) => (
+          {(["users", "admins", "events", "streams"] as const).map((k) => (
             <button key={k} onClick={() => setTab(k)}
               className={`flex-1 py-2 text-sm font-medium rounded-md capitalize transition-colors ${tab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>
               {k}
@@ -83,7 +83,7 @@ const AdminPanel = ({ onBack }: Props) => {
           ))}
         </div>
 
-        {tab !== "events" && (
+        {tab !== "events" && tab !== "streams" && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or id"
@@ -91,7 +91,9 @@ const AdminPanel = ({ onBack }: Props) => {
           </div>
         )}
 
-        {loading && <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>}
+        {loading && tab !== "streams" && <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>}
+
+        {tab === "streams" && <LiveStreamsAdmin />}
 
         {!loading && tab === "users" && (
           <div className="rounded-lg border border-border overflow-hidden divide-y divide-border bg-card">

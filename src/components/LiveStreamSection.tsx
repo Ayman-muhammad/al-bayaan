@@ -1,43 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Radio, Play, ExternalLink, Volume2, VolumeX, Maximize2 } from "lucide-react";
 import meccaImg from "@/assets/kaaba-hero.jpg";
 import medinaImg from "@/assets/medina-mosque.jpg";
+import {
+  FALLBACK_STREAMS,
+  LiveStream,
+  buildEmbedSrc,
+  fetchLiveStreams,
+  readCachedStreams,
+  watchUrl,
+} from "@/lib/liveStreams";
 
 /**
- * Official 24/7 embeds provided for Al-Bayan.
- * Params are kept exactly as supplied: no related videos, no branding,
- * inline playback on mobile — muted first frame so autoplay is never blocked.
+ * Streams are configured by admins (Admin Panel → Streams) and stored in the
+ * database, so links and embed params change without a code deploy.
  */
-const EMBED_PARAMS = "rel=0&modestbranding=1&playsinline=1&iv_load_policy=3";
-
-const STREAMS = [
-  {
-    id: "mecca",
-    label: { ar: "بث مباشر من مكة المكرمة", en: "Live from Makkah" },
-    desc: { ar: "المسجد الحرام", en: "Masjid Al-Haram" },
-    thumbnail: meccaImg,
-    youtubeId: "nwllJOmz3sI",
-    externalUrl: "https://www.youtube.com/watch?v=nwllJOmz3sI",
-  },
-  {
-    id: "medina",
-    label: { ar: "بث مباشر من المدينة المنورة", en: "Live from Madinah" },
-    desc: { ar: "المسجد النبوي", en: "Masjid An-Nabawi" },
-    thumbnail: medinaImg,
-    youtubeId: "QYCZzl--IQs",
-    externalUrl: "https://www.youtube.com/watch?v=QYCZzl--IQs",
-  },
-];
+const thumbnailFor = (slug: string) =>
+  /mad|medin|nabaw/i.test(slug) ? medinaImg : meccaImg;
 
 const LiveStreamSection = () => {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [activeStream, setActiveStream] = useState<string | null>(null);
   const [muted, setMuted] = useState(true);
+  const [streams, setStreams] = useState<LiveStream[]>(
+    () => readCachedStreams() || FALLBACK_STREAMS,
+  );
 
-  const embedSrc = (id: string) =>
-    `https://www.youtube.com/embed/${id}?autoplay=1&mute=${muted ? 1 : 0}&${EMBED_PARAMS}`;
+  useEffect(() => {
+    let cancelled = false;
+    fetchLiveStreams().then((s) => {
+      if (!cancelled && s.length) setStreams(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (streams.length === 0) return null;
 
   return (
     <section className="py-10 px-4">
@@ -58,7 +59,7 @@ const LiveStreamSection = () => {
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
-          {STREAMS.map((stream, i) => (
+          {streams.map((stream, i) => (
             <div
               key={stream.id}
               className="rounded-2xl overflow-hidden border border-border bg-card group animate-slide-up"
@@ -69,12 +70,12 @@ const LiveStreamSection = () => {
                   <iframe
                     key={`${stream.id}-${muted ? "m" : "s"}`}
                     id={`live-frame-${stream.id}`}
-                    src={embedSrc(stream.youtubeId)}
+                    src={buildEmbedSrc(stream, { muted })}
                     className="absolute inset-0 w-full h-full"
                     allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
-                    title={stream.label.en}
+                    title={stream.label_en}
                   />
                   <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
                     <button
@@ -101,8 +102,8 @@ const LiveStreamSection = () => {
                   className="relative w-full aspect-video overflow-hidden cursor-pointer"
                 >
                   <img
-                    src={stream.thumbnail}
-                    alt={stream.label.en}
+                    src={thumbnailFor(stream.slug)}
+                    alt={stream.label_en}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
                     width={960}
@@ -127,14 +128,14 @@ const LiveStreamSection = () => {
               <div className="p-4 flex items-center justify-between">
                 <div>
                   <h3 className={`font-semibold text-foreground text-sm ${isAr ? "font-arabic" : ""}`}>
-                    {stream.label[language]}
+                    {isAr ? stream.label_ar || stream.label_en : stream.label_en}
                   </h3>
                   <p className={`text-xs text-muted-foreground ${isAr ? "font-arabic" : ""}`}>
-                    {stream.desc[language]}
+                    {isAr ? stream.desc_ar || stream.desc_en : stream.desc_en}
                   </p>
                 </div>
                 <a
-                  href={stream.externalUrl}
+                  href={watchUrl(stream)}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={isAr ? "شاهد على يوتيوب" : "Watch on YouTube"}
