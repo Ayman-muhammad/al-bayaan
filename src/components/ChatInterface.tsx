@@ -41,6 +41,35 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
 
   const showQuickTopics = messages.length <= 1;
 
+  /**
+   * Reopening a saved answer from Favorites rehydrates the exchange here so the
+   * user can read it in full and keep asking follow-ups.
+   */
+  useEffect(() => {
+    const raw = localStorage.getItem("al-bayan-restore-chat");
+    if (!raw) return;
+    localStorage.removeItem("al-bayan-restore-chat");
+    try {
+      const saved = JSON.parse(raw) as { query?: string; response?: string; bookmarkId?: string };
+      if (!saved?.response) return;
+      setMessages((prev) => [
+        ...prev,
+        ...(saved.query
+          ? [{ id: `restored-q-${Date.now()}`, role: "user" as const, content: saved.query }]
+          : []),
+        {
+          id: `restored-a-${Date.now()}`,
+          role: "assistant" as const,
+          content: saved.response,
+          bookmarked: true,
+          bookmarkId: saved.bookmarkId,
+        },
+      ]);
+    } catch {
+      /* ignore malformed handoff payloads */
+    }
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
