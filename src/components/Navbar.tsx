@@ -33,7 +33,7 @@ import {
   Sunrise,
   Download,
   Sparkle,
-  Radio,
+  Settings,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsAdmin } from "@/lib/useIsAdmin";
@@ -101,7 +101,7 @@ const Navbar = ({ currentView, onNavigate }: NavbarProps) => {
     { id: "journey", icon: TrendingUp, labelAr: "رحلتي", labelEn: "My Journey" },
     { id: "favorites", icon: Bookmark, labelAr: "المحفوظات", labelEn: "Saved & Favorites" },
     { id: "downloads", icon: Download, labelAr: "التحميلات", labelEn: "Offline Downloads" },
-    { id: "more", icon: MenuIcon2, labelAr: "الإعدادات", labelEn: "Settings" },
+    { id: "more", icon: Settings, labelAr: "الإعدادات", labelEn: "Settings" },
   ];
 
   /** Desktop condensed row — the highest-traffic destinations. */
