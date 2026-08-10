@@ -58,6 +58,16 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
       onNavigate("audio");
       return;
     }
+    // Saved chats reopen inside the assistant with the full exchange restored,
+    // so the conversation can continue where it left off.
+    if (b.type === "chat") {
+      localStorage.setItem(
+        "al-bayan-restore-chat",
+        JSON.stringify({ query: c?.query || "", response: c?.response || "", bookmarkId: b.id }),
+      );
+      onNavigate("chat");
+      return;
+    }
     setReview(b);
   };
 
@@ -223,15 +233,13 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
                     <Eye className="w-3.5 h-3.5" />
                     {isAr ? "مراجعة" : "Review"}
                   </button>
-                  {(bookmark.type !== "chat") && (
-                    <button
-                      onClick={() => openBookmark(bookmark)}
-                      className="text-xs font-medium text-accent px-2 py-1 rounded-lg hover:bg-accent/10 flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      {isAr ? "فتح" : "Open"}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => openBookmark(bookmark)}
+                    className="text-xs font-medium text-accent px-2 py-1 rounded-lg hover:bg-accent/10 flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {bookmark.type === "chat" ? (isAr ? "متابعة" : "Continue") : isAr ? "فتح" : "Open"}
+                  </button>
                   <button onClick={() => deleteBookmark(bookmark.id)} className="text-muted-foreground hover:text-destructive p-1">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -300,12 +308,10 @@ const FavoritesHub = ({ onBack, onNavigate }: FavoritesHubProps) => {
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
                   {isAr ? "نسخ" : "Copy"}
                 </Button>
-                {review.type !== "chat" && (
-                  <Button variant="hero" size="sm" onClick={() => openBookmark(review)} className="flex-1">
-                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                    {isAr ? "فتح" : "Open"}
-                  </Button>
-                )}
+                <Button variant="hero" size="sm" onClick={() => openBookmark(review)} className="flex-1">
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                  {review.type === "chat" ? (isAr ? "متابعة في المحادثة" : "Continue in chat") : isAr ? "فتح" : "Open"}
+                </Button>
               </div>
             </div>
           )}
