@@ -269,6 +269,9 @@ Admins are users with an `admin` row in `user_roles`. The panel (menu → **Admi
 - **Users** — roster with search by name or id.
 - **Admins** — current privileged accounts.
 - **Events** — recent telemetry / auth funnel events.
+
+Roles are granted by inserting an `admin` row in `user_roles` for the target account (matched from
+`profiles.email`) — never by a client-side check, an email allow-list in code, or a column on `profiles`.
 - **Streams** — create, reorder, hide or edit live broadcasts: labels and subtitles in English and Arabic,
   YouTube link or bare video ID (pasted watch / `youtu.be` / embed / live URLs are normalised automatically),
   the "Watch on YouTube" link, and embed parameters via toggle chips
