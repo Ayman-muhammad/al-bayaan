@@ -52,9 +52,13 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   const [mushafMode, setMushafMode] = useState<boolean>(
     () => localStorage.getItem("al-bayan-mushaf-mode") !== "off",
   );
-  /** Physical printed-Mushaf paging (604 pages) — the real book layout. */
+  /**
+   * Physical printed-Mushaf paging (604 pages) — the real book layout and the
+   * default reading experience: text flows across pages instead of stopping at
+   * surah boundaries. Users can still opt into surah view (persisted as "off").
+   */
   const [pageMode, setPageMode] = useState<boolean>(
-    () => localStorage.getItem("al-bayan-page-mode") === "on",
+    () => localStorage.getItem("al-bayan-page-mode") !== "off",
   );
   const [mushafPageNum, setMushafPageNum] = useState<number>(
     () => Math.min(TOTAL_MUSHAF_PAGES, Math.max(1, Number(localStorage.getItem("al-bayan-page-num")) || 1)),
@@ -370,6 +374,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
     const s = parseInt(params.get("surah") || "", 10);
     if (!s || s < 1 || s > 114) return;
     deepLinkDone.current = true;
+    // Assigned portions are tracked ayah-by-ayah, so bridge into surah view.
+    if (params.get("ayah") || params.get("familyCycle")) setPageMode(false);
     openSurah(s);
   }, [params]);
 
