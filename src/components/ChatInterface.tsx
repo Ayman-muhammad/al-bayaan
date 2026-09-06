@@ -276,7 +276,7 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="relative flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -297,7 +297,33 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(true)}
+            aria-label={language === "ar" ? "بحث في القرآن" : "Search the Quran"}
+          >
+            <Search className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSavedOpen(true)}
+            aria-label={language === "ar" ? "الإجابات المحفوظة" : "Saved answers"}
+          >
+            <Library className="w-5 h-5" />
+          </Button>
+        </div>
       </header>
+
+      <QuranSearchPanel
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onAsk={(prompt) => sendMessage(prompt)}
+      />
+      <SavedChatsSheet open={savedOpen} onOpenChange={setSavedOpen} onOpenChat={restoreSaved} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-thin">
