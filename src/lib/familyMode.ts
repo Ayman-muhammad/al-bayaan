@@ -22,6 +22,8 @@ export interface FamilyModeState {
   dhikrTarget: number | null;
   /** True once this session has logged the completion (prevents duplicates). */
   completed: boolean;
+  /** Member ids that already logged this activity today (live-updated). */
+  doneMemberIds: string[];
   complete: (memberIds: string[]) => Promise<boolean>;
   exit: () => void;
 }
