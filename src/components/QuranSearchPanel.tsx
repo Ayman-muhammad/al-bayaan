@@ -66,7 +66,7 @@ const QuranSearchPanel = ({ open, onClose, onAsk }: Props) => {
         if (id !== reqId.current) return;
         setHits(found);
         // Enrich the first few hits with the original Arabic.
-        const enriched = await Promise.all(
+        const enriched: QuranSearchHit[] = await Promise.all(
           found.slice(0, 8).map(async (h) => ({
             ...h,
             arabic: lang.code === "ar" ? h.text : await fetchAyahArabic(h.surahNumber, h.ayahNumber),
