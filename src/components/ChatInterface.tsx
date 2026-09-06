@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
+import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck, Search, Library } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
 import { addBookmark, removeBookmark } from "@/lib/bookmarks";
 import { supabase } from "@/integrations/supabase/client";
+import QuranSearchPanel from "@/components/QuranSearchPanel";
+import SavedChatsSheet from "@/components/SavedChatsSheet";
 
 interface Message {
   id: string;
