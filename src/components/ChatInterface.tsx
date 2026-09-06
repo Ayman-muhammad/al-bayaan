@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
+import { Send, BookOpen, ArrowLeft, Bookmark, BookmarkCheck, Search, Library } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import QuickTopics from "@/components/QuickTopics";
 import { useAuth } from "@/contexts/AuthContext";
 import { addBookmark, removeBookmark } from "@/lib/bookmarks";
 import { supabase } from "@/integrations/supabase/client";
+import QuranSearchPanel from "@/components/QuranSearchPanel";
+import SavedChatsSheet from "@/components/SavedChatsSheet";
 
 interface Message {
   id: string;
@@ -36,10 +38,34 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
   const madhabCompare = false;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const showQuickTopics = messages.length <= 1;
+
+  /** Rehydrates a saved exchange so it can be read in full and continued. */
+  const restoreSaved = useCallback(
+    (saved: { query?: string; response?: string; bookmarkId?: string }) => {
+      if (!saved?.response) return;
+      const stamp = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        ...(saved.query
+          ? [{ id: `restored-q-${stamp}`, role: "user" as const, content: saved.query }]
+          : []),
+        {
+          id: `restored-a-${stamp}`,
+          role: "assistant" as const,
+          content: saved.response,
+          bookmarked: true,
+          bookmarkId: saved.bookmarkId,
+        },
+      ]);
+    },
+    [],
+  );
 
   /**
    * Reopening a saved answer from Favorites rehydrates the exchange here so the
@@ -50,25 +76,11 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     if (!raw) return;
     localStorage.removeItem("al-bayan-restore-chat");
     try {
-      const saved = JSON.parse(raw) as { query?: string; response?: string; bookmarkId?: string };
-      if (!saved?.response) return;
-      setMessages((prev) => [
-        ...prev,
-        ...(saved.query
-          ? [{ id: `restored-q-${Date.now()}`, role: "user" as const, content: saved.query }]
-          : []),
-        {
-          id: `restored-a-${Date.now()}`,
-          role: "assistant" as const,
-          content: saved.response,
-          bookmarked: true,
-          bookmarkId: saved.bookmarkId,
-        },
-      ]);
+      restoreSaved(JSON.parse(raw));
     } catch {
       /* ignore malformed handoff payloads */
     }
-  }, []);
+  }, [restoreSaved]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -264,7 +276,7 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="relative flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -285,7 +297,33 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(true)}
+            aria-label={language === "ar" ? "بحث في القرآن" : "Search the Quran"}
+          >
+            <Search className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSavedOpen(true)}
+            aria-label={language === "ar" ? "الإجابات المحفوظة" : "Saved answers"}
+          >
+            <Library className="w-5 h-5" />
+          </Button>
+        </div>
       </header>
+
+      <QuranSearchPanel
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onAsk={(prompt) => sendMessage(prompt)}
+      />
+      <SavedChatsSheet open={savedOpen} onOpenChange={setSavedOpen} onOpenChat={restoreSaved} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-thin">
