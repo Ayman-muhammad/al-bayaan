@@ -38,10 +38,34 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
   const madhabCompare = false;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const showQuickTopics = messages.length <= 1;
+
+  /** Rehydrates a saved exchange so it can be read in full and continued. */
+  const restoreSaved = useCallback(
+    (saved: { query?: string; response?: string; bookmarkId?: string }) => {
+      if (!saved?.response) return;
+      const stamp = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        ...(saved.query
+          ? [{ id: `restored-q-${stamp}`, role: "user" as const, content: saved.query }]
+          : []),
+        {
+          id: `restored-a-${stamp}`,
+          role: "assistant" as const,
+          content: saved.response,
+          bookmarked: true,
+          bookmarkId: saved.bookmarkId,
+        },
+      ]);
+    },
+    [],
+  );
 
   /**
    * Reopening a saved answer from Favorites rehydrates the exchange here so the
@@ -52,25 +76,11 @@ const ChatInterface = ({ onBack }: ChatInterfaceProps) => {
     if (!raw) return;
     localStorage.removeItem("al-bayan-restore-chat");
     try {
-      const saved = JSON.parse(raw) as { query?: string; response?: string; bookmarkId?: string };
-      if (!saved?.response) return;
-      setMessages((prev) => [
-        ...prev,
-        ...(saved.query
-          ? [{ id: `restored-q-${Date.now()}`, role: "user" as const, content: saved.query }]
-          : []),
-        {
-          id: `restored-a-${Date.now()}`,
-          role: "assistant" as const,
-          content: saved.response,
-          bookmarked: true,
-          bookmarkId: saved.bookmarkId,
-        },
-      ]);
+      restoreSaved(JSON.parse(raw));
     } catch {
       /* ignore malformed handoff payloads */
     }
-  }, []);
+  }, [restoreSaved]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
