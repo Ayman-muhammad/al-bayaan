@@ -16,6 +16,7 @@ import MushafPageSpread from "@/components/MushafPageSpread";
 import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
+import FamilyModeBar from "@/components/FamilyModeBar";
 
 interface Ayah {
   number: number;

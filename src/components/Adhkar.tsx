@@ -116,6 +116,8 @@ const Adhkar = ({ onBack }: Props) => {
         </div>
       </header>
 
+      <FamilyModeBar family={family} label={title} percent={percent} />
+
       <main className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {items.map((item) => {
           const c = counts[item.id] || 0;
