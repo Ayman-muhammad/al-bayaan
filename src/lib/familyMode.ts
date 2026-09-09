@@ -47,6 +47,7 @@ export function useFamilyMode(): FamilyModeState {
   const [dayNumber, setDayNumber] = useState<number | null>(null);
   const [durationDays, setDurationDays] = useState<number | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [doneMemberIds, setDoneMemberIds] = useState<string[]>([]);
 
   const num = (v: string | null) => (v && !Number.isNaN(Number(v)) ? Number(v) : null);
   const range = {
