@@ -173,6 +173,7 @@ export function useFamilyMode(): FamilyModeState {
     range,
     dhikrTarget,
     completed,
+    doneMemberIds,
     complete,
     exit,
   };
