@@ -16,6 +16,7 @@ import MushafPageSpread from "@/components/MushafPageSpread";
 import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
+import FamilyModeBar from "@/components/FamilyModeBar";
 
 interface Ayah {
   number: number;
@@ -486,18 +487,17 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
         </div>
       </header>
 
-      {/* Family Cycle mode banner — never a dead end */}
-      {family.active && (
-        <div className="shrink-0 px-4 py-2 bg-gradient-to-r from-accent/20 to-primary/15 border-b border-accent/30 flex items-center gap-2">
-          <span className="text-xs font-semibold text-foreground">
-            {isAr ? "وضع العائلة" : "Family Cycle"}
-            {family.dayNumber ? ` • ${isAr ? "يوم" : "Day"} ${family.dayNumber}${family.durationDays ? `/${family.durationDays}` : ""}` : ""}
-          </span>
-          <button onClick={family.exit} className="ml-auto text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <X className="w-3 h-3" /> {isAr ? "خروج" : "Exit"}
-          </button>
-        </div>
-      )}
+      {/* Family Cycle mode bar — live member progress, never a dead end */}
+      <FamilyModeBar
+        family={family}
+        label={
+          family.range.surah
+            ? `${isAr ? "سورة" : "Surah"} ${family.range.surah}${
+                family.range.from ? ` • ${family.range.from}${family.range.to ? `–${family.range.to}` : ""}` : ""
+              }`
+            : undefined
+        }
+      />
 
       {/* === SURAH LIST === */}
       {screen === "list" && (

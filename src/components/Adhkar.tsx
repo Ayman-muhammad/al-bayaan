@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFamilyMode } from "@/lib/familyMode";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
+import FamilyModeBar from "@/components/FamilyModeBar";
 import { MORNING_ADHKAR, EVENING_ADHKAR, type DhikrItem } from "@/data/adhkar";
 
 interface Props {
@@ -114,6 +115,8 @@ const Adhkar = ({ onBack }: Props) => {
           <Progress value={percent} className="h-2" />
         </div>
       </header>
+
+      <FamilyModeBar family={family} label={title} percent={percent} />
 
       <main className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {items.map((item) => {
