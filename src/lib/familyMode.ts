@@ -96,6 +96,46 @@ export function useFamilyMode(): FamilyModeState {
     };
   }, [active, activityId, user]);
 
+  // Live "who has finished today" tracking for this bridged activity.
+  useEffect(() => {
+    if (!active || !activityId || !user) return;
+    const today = new Date().toISOString().slice(0, 10);
+    let cancelled = false;
+
+    const load = async () => {
+      const { data } = await supabase
+        .from("cycle_completions")
+        .select("member_id")
+        .eq("activity_id", activityId)
+        .eq("completion_date", today);
+      if (cancelled) return;
+      const ids = (data ?? [])
+        .map((r: { member_id: string | null }) => r.member_id)
+        .filter((id): id is string => !!id);
+      setDoneMemberIds(Array.from(new Set(ids)));
+    };
+    void load();
+
+    const channel = supabase
+      .channel(`cycle_completions:${activityId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cycle_completions",
+          filter: `activity_id=eq.${activityId}`,
+        },
+        () => void load(),
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [active, activityId, user]);
+
   const complete = useCallback(
     async (memberIds: string[]) => {
       if (!activityId || !user) return false;
@@ -107,11 +147,18 @@ export function useFamilyMode(): FamilyModeState {
         completed_by: user.id,
       }));
       const { error } = await supabase.from("cycle_completions").insert(rows);
-      if (!error) setCompleted(true);
+      if (!error) {
+        setCompleted(true);
+        setDoneMemberIds((prev) =>
+          Array.from(new Set([...prev, ...memberIds.filter(Boolean)])),
+        );
+      }
       return !error;
     },
     [activityId, user],
   );
+
+
 
   const exit = useCallback(() => {
     navigate("/", { replace: true });
