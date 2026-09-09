@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFamilyMode } from "@/lib/familyMode";
+import FamilyModeBar from "@/components/FamilyModeBar";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 
 interface DhikrPageProps {
@@ -614,6 +615,12 @@ const DhikrPage = ({ onBack }: DhikrPageProps) => {
             (isAr ? selectedDua?.titleAr : selectedDua?.titleEn)}
         </h1>
       </header>
+
+      <FamilyModeBar
+        family={family}
+        label={activePreset ? `${isAr ? "الهدف" : "Target"} ${activePreset.target}` : undefined}
+        percent={activePreset ? progressPct : undefined}
+      />
 
       {/* === MENU === */}
       {screen === "menu" && (

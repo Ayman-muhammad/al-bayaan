@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFamilyMode } from "@/lib/familyMode";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
+import FamilyModeBar from "@/components/FamilyModeBar";
 import { MORNING_ADHKAR, EVENING_ADHKAR, type DhikrItem } from "@/data/adhkar";
 
 interface Props {
