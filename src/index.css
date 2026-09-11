@@ -168,6 +168,50 @@
     background-clip: text;
   }
 
+  /* ── Prestige dashboard surfaces ───────────────────────────────────── */
+  .prestige-card {
+    position: relative;
+    border-radius: 1rem;
+    background: linear-gradient(160deg, hsl(var(--card)) 0%, hsl(var(--card) / 0.7) 100%);
+    border: 1px solid hsl(var(--primary) / 0.18);
+    box-shadow: 0 1px 2px hsl(var(--primary) / 0.06);
+    transition: transform 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
+  }
+  .prestige-card:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--gold) / 0.45);
+    box-shadow: 0 12px 28px -14px hsl(var(--primary) / 0.35);
+  }
+  .prestige-card::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 18%;
+    bottom: 18%;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, hsl(var(--gold) / 0.8), transparent);
+    opacity: 0.7;
+  }
+
+  .prestige-section-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+  }
+
+  .prestige-rule {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      hsl(var(--gold) / 0.45),
+      hsl(var(--border) / 0.6),
+      transparent
+    );
+  }
+
   /* Tajweed word-level highlighting.
      Uses background tint + bottom border so Arabic letter shaping is not
      broken (no per-glyph spans). Multiple rules can stack on one word. */

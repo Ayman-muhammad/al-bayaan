@@ -49,21 +49,42 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     { icon: Quote, title: t("featureCitations"), desc: t("featureCitationsDesc"), action: () => onNavigate("chat") },
   ];
 
-  const quickLinks = [
-    { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
-    { img: iconFamily, label: isAr ? "دورة العائلة" : "Family Cycle", desc: isAr ? "نيّة يومية معًا" : "Daily intention together", action: () => onNavigate("cycle") },
-    { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
-    { img: iconQuran, label: isAr ? "التحميلات" : "Downloads", desc: isAr ? "احفظ للسماع دون اتصال" : "Save for offline", action: () => onNavigate("downloads") },
-    { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
-    { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
-    { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
-    { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
-    { img: iconDhikr, label: isAr ? "أذكار الصباح والمساء" : "Morning & Evening Adhkar", desc: isAr ? "الحصن اليومي" : "Daily fortress", action: () => onNavigate("adhkar") },
-    { img: iconDhikr, label: isAr ? "الأدعية والتسبيح" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
-    { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
-    { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
-    { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تأملاتك ومعالمك" : "Reflections & milestones", action: () => onNavigate("journey") },
-    { img: iconFamily, label: isAr ? "مرحباً بك في الإسلام" : "New to Islam", desc: isAr ? "دليل مبسّط للمهتدين" : "Gentle revert guide", action: () => onNavigate("revert") },
+  const linkGroups = [
+    {
+      title: isAr ? "العبادة اليومية" : "Daily Worship",
+      items: [
+        { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
+        { img: iconDhikr, label: isAr ? "أذكار الصباح والمساء" : "Morning & Evening Adhkar", desc: isAr ? "الحصن اليومي" : "Daily fortress", action: () => onNavigate("adhkar") },
+        { img: iconDhikr, label: isAr ? "الأدعية والتسبيح" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
+        { img: iconFamily, label: isAr ? "دورة العائلة" : "Family Cycle", desc: isAr ? "نيّة يومية معًا" : "Daily intention together", action: () => onNavigate("cycle") },
+      ],
+    },
+    {
+      title: isAr ? "القرآن الكريم" : "The Noble Quran",
+      items: [
+        { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
+        { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
+        { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
+        { img: iconQuran, label: isAr ? "التحميلات" : "Downloads", desc: isAr ? "احفظ للسماع دون اتصال" : "Save for offline", action: () => onNavigate("downloads") },
+      ],
+    },
+    {
+      title: isAr ? "العلم والمعرفة" : "Knowledge & Guidance",
+      items: [
+        { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
+        { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
+        { img: iconFamily, label: isAr ? "مرحباً بك في الإسلام" : "New to Islam", desc: isAr ? "دليل مبسّط للمهتدين" : "Gentle revert guide", action: () => onNavigate("revert") },
+        { img: iconMadhab, label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "المذاهب الأربعة" : "Four schools", action: () => onNavigate("chat") },
+      ],
+    },
+    {
+      title: isAr ? "رحلتي" : "My Progress",
+      items: [
+        { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
+        { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تأملاتك ومعالمك" : "Reflections & milestones", action: () => onNavigate("journey") },
+        { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
+      ],
+    },
   ];
 
   const slide = HERO_SLIDES[currentSlide];
@@ -205,28 +226,37 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
         </svg>
       </div>
 
-      {/* Quick Links */}
-      <section className="relative py-6 sm:py-8 px-3 sm:px-4 bg-card/50">
-        <div className="absolute inset-0 islamic-pattern opacity-30 pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 text-center">
-            {quickLinks.map((item, i) => (
-              <button
-                key={i}
-                onClick={item.action}
-                className="p-3 sm:p-4 rounded-xl bg-background border border-border hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-slide-up flex flex-col items-center"
-                style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
-              >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/5 to-accent/10 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                  <img src={item.img} alt="" width={64} height={64} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm" loading="lazy" />
-                </div>
-                <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
-                <p className={`text-[10px] text-muted-foreground mt-1 line-clamp-2 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
-              </button>
-            ))}
-          </div>
+      {/* Grouped feature sections */}
+      <section className="relative py-6 sm:py-10 px-3 sm:px-4 bg-card/40">
+        <div className="absolute inset-0 islamic-pattern opacity-20 pointer-events-none" />
+        <div className="relative max-w-5xl mx-auto space-y-7 sm:space-y-9">
+          {linkGroups.map((group, gi) => (
+            <div key={gi} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className={`prestige-section-title ${isAr ? "font-arabic" : ""}`}>{group.title}</h3>
+                <span className="prestige-rule flex-1" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+                {group.items.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={item.action}
+                    className="prestige-card p-3 sm:p-4 text-center cursor-pointer group animate-slide-up flex flex-col items-center"
+                    style={{ animationDelay: `${(gi * 4 + i) * 60}ms`, animationFillMode: "both" }}
+                  >
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/5 to-accent/10 group-hover:scale-110 transition-transform duration-500">
+                      <img src={item.img} alt="" width={64} height={64} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm" loading="lazy" />
+                    </div>
+                    <p className={`text-xs font-semibold text-foreground mt-2 ${isAr ? "font-arabic" : ""}`}>{item.label}</p>
+                    <p className={`text-[10px] text-muted-foreground mt-1 line-clamp-2 ${isAr ? "font-arabic" : ""}`}>{item.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
+
 
       {/* Live Streams from Mecca & Medina */}
       <LiveStreamSection />
