@@ -892,7 +892,16 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                               key={i}
                               className="inline-flex flex-col items-center px-2 py-1 rounded-lg hover:bg-accent/10 transition-colors group"
                             >
-                              <span className="font-arabic text-xl sm:text-2xl leading-[1.6] text-foreground">{w.ar}</span>
+                              <span
+                                className="font-arabic quran-arabic text-foreground"
+                                style={{
+                                  fontFamily: FONT_FAMILY_CSS[prefs.font_family],
+                                  fontSize: `${fontSizeToPx(prefs.font_size_level)}px`,
+                                  lineHeight: "1.7",
+                                }}
+                              >
+                                {w.ar}
+                              </span>
                               <span className="text-[10px] text-muted-foreground mt-0.5 group-hover:text-accent">{w.en}</span>
                             </span>
                           ))}
@@ -900,7 +909,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       </div>
                     ) : (
                       <p
-                        className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
+                        className="text-right font-arabic quran-arabic text-foreground flex-1"
                         dir="rtl"
                         style={{
                           wordSpacing: WORD_SPACING_CSS[prefs.word_spacing],

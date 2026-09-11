@@ -82,7 +82,7 @@ const MushafPage = ({
 
         {/* Continuous justified flow */}
         <div
-          className="mushaf-flow font-arabic px-4 sm:px-6 py-6"
+          className="mushaf-flow quran-arabic font-arabic px-4 sm:px-6 py-6"
           style={{
             fontFamily: FONT_FAMILY_CSS[prefs.font_family],
             fontSize: `${fontSizeToPx(prefs.font_size_level)}px`,

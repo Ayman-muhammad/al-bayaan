@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Amiri+Quran&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -315,6 +315,19 @@
     border-bottom: 2px solid color-mix(in srgb, var(--mushaf-accent) 60%, transparent);
   }
 
+  /* Shared Quranic text rendering: full ligatures/marks, crisp shaping.
+     Applies to every surface that shows Quran Arabic so the reader,
+     mushaf pages, search and daily verse all look identical. */
+  .quran-arabic {
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga" 1, "calt" 1, "rlig" 1, "ccmp" 1, "mark" 1, "mkmk" 1;
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-font-smoothing: antialiased;
+    font-kerning: normal;
+    letter-spacing: 0;
+    hanging-punctuation: none;
+  }
+
   /* Continuous justified Mushaf flow (RTL, shaping-safe) */
   .mushaf-flow {
     direction: rtl;
@@ -322,6 +335,10 @@
     text-align-last: center;
     text-justify: inter-word;
     unicode-bidi: isolate;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga" 1, "calt" 1, "rlig" 1, "ccmp" 1, "mark" 1, "mkmk" 1;
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-font-smoothing: antialiased;
   }
   .mushaf-ayah {
     cursor: pointer;

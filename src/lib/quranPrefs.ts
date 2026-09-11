@@ -103,11 +103,11 @@ export function useQuranPrefs() {
 }
 
 export const FONT_FAMILY_CSS: Record<MushafFont, string> = {
-  uthmani: "'Scheherazade New', 'Amiri Quran', 'Amiri', serif",
+  uthmani: "'Amiri Quran', 'Scheherazade New', 'Amiri', serif",
   amiri: "'Amiri', 'Amiri Quran', serif",
-  scheherazade: "'Scheherazade New', serif",
+  scheherazade: "'Scheherazade New', 'Amiri', serif",
   indopak: "'Noto Naskh Arabic', 'Scheherazade New', serif",
-  qalam: "'Amiri Quran', 'Reem Kufi', 'Amiri', serif",
+  qalam: "'Amiri Quran', 'Amiri', serif",
 };
 
 export const FONT_LABELS: Record<MushafFont, { en: string; ar: string }> = {
