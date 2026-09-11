@@ -49,21 +49,42 @@ const HeroSection = ({ onStartChat, onNavigate }: HeroSectionProps) => {
     { icon: Quote, title: t("featureCitations"), desc: t("featureCitationsDesc"), action: () => onNavigate("chat") },
   ];
 
-  const quickLinks = [
-    { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
-    { img: iconFamily, label: isAr ? "دورة العائلة" : "Family Cycle", desc: isAr ? "نيّة يومية معًا" : "Daily intention together", action: () => onNavigate("cycle") },
-    { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
-    { img: iconQuran, label: isAr ? "التحميلات" : "Downloads", desc: isAr ? "احفظ للسماع دون اتصال" : "Save for offline", action: () => onNavigate("downloads") },
-    { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
-    { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
-    { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
-    { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
-    { img: iconDhikr, label: isAr ? "أذكار الصباح والمساء" : "Morning & Evening Adhkar", desc: isAr ? "الحصن اليومي" : "Daily fortress", action: () => onNavigate("adhkar") },
-    { img: iconDhikr, label: isAr ? "الأدعية والتسبيح" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
-    { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
-    { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
-    { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تأملاتك ومعالمك" : "Reflections & milestones", action: () => onNavigate("journey") },
-    { img: iconFamily, label: isAr ? "مرحباً بك في الإسلام" : "New to Islam", desc: isAr ? "دليل مبسّط للمهتدين" : "Gentle revert guide", action: () => onNavigate("revert") },
+  const linkGroups = [
+    {
+      title: isAr ? "العبادة اليومية" : "Daily Worship",
+      items: [
+        { img: iconPrayer, label: isAr ? "مواقيت الصلاة" : "Prayer Times", desc: isAr ? "المواقيت والقبلة" : "Times & Qibla", action: () => onNavigate("prayer") },
+        { img: iconDhikr, label: isAr ? "أذكار الصباح والمساء" : "Morning & Evening Adhkar", desc: isAr ? "الحصن اليومي" : "Daily fortress", action: () => onNavigate("adhkar") },
+        { img: iconDhikr, label: isAr ? "الأدعية والتسبيح" : "Dhikr & Dua", desc: isAr ? "تسبيح وأدعية" : "Tasbih & duas", action: () => onNavigate("dhikr") },
+        { img: iconFamily, label: isAr ? "دورة العائلة" : "Family Cycle", desc: isAr ? "نيّة يومية معًا" : "Daily intention together", action: () => onNavigate("cycle") },
+      ],
+    },
+    {
+      title: isAr ? "القرآن الكريم" : "The Noble Quran",
+      items: [
+        { img: iconQuran, label: isAr ? "القرآن الكريم" : "Read Quran", desc: isAr ? "اقرأ مع الترجمة" : "Arabic text & translation", action: () => onNavigate("quran") },
+        { img: iconHafiz, label: isAr ? "وضع الحفظ" : "Hafiz Mode", desc: isAr ? "احفظ القرآن" : "Memorize Quran", action: () => onNavigate("hafiz") },
+        { img: iconAudio, label: isAr ? "استمع للقرآن" : "Listen to Quran", desc: isAr ? "من قراء مشهورين" : "Famous reciters", action: () => onNavigate("audio") },
+        { img: iconQuran, label: isAr ? "التحميلات" : "Downloads", desc: isAr ? "احفظ للسماع دون اتصال" : "Save for offline", action: () => onNavigate("downloads") },
+      ],
+    },
+    {
+      title: isAr ? "العلم والمعرفة" : "Knowledge & Guidance",
+      items: [
+        { img: iconScholars, label: isAr ? "علماء وفتاوى" : "Scholars Q&A", desc: isAr ? "5 لغات • مصادر موثوقة" : "5 languages • Verified", action: () => onNavigate("scholars") },
+        { img: iconChat, label: isAr ? "اسأل سؤالاً" : "Ask a Question", desc: isAr ? "مدعوم بالذكاء الاصطناعي" : "AI-powered answers", action: () => onNavigate("chat") },
+        { img: iconFamily, label: isAr ? "مرحباً بك في الإسلام" : "New to Islam", desc: isAr ? "دليل مبسّط للمهتدين" : "Gentle revert guide", action: () => onNavigate("revert") },
+        { img: iconMadhab, label: isAr ? "مقارنة المذاهب" : "Madhab Compare", desc: isAr ? "المذاهب الأربعة" : "Four schools", action: () => onNavigate("chat") },
+      ],
+    },
+    {
+      title: isAr ? "رحلتي" : "My Progress",
+      items: [
+        { img: iconJourney, label: isAr ? "لوحة التقدم" : "Dashboard", desc: isAr ? "تتبع رحلتك" : "Track your progress", action: () => onNavigate("dashboard") },
+        { img: iconJourney, label: isAr ? "رحلتي" : "My Journey", desc: isAr ? "تأملاتك ومعالمك" : "Reflections & milestones", action: () => onNavigate("journey") },
+        { img: iconFavorites, label: isAr ? "المفضلة" : "Favorites", desc: isAr ? "الآيات المحفوظة" : "Saved content", action: () => onNavigate("favorites") },
+      ],
+    },
   ];
 
   const slide = HERO_SLIDES[currentSlide];
