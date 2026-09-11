@@ -909,7 +909,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
                       </div>
                     ) : (
                       <p
-                        className="text-right font-arabic text-xl sm:text-2xl leading-[2.4] text-foreground flex-1"
+                        className="text-right font-arabic quran-arabic text-foreground flex-1"
                         dir="rtl"
                         style={{
                           wordSpacing: WORD_SPACING_CSS[prefs.word_spacing],
