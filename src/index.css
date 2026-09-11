@@ -315,6 +315,19 @@
     border-bottom: 2px solid color-mix(in srgb, var(--mushaf-accent) 60%, transparent);
   }
 
+  /* Shared Quranic text rendering: full ligatures/marks, crisp shaping.
+     Applies to every surface that shows Quran Arabic so the reader,
+     mushaf pages, search and daily verse all look identical. */
+  .quran-arabic {
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga" 1, "calt" 1, "rlig" 1, "ccmp" 1, "mark" 1, "mkmk" 1;
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-font-smoothing: antialiased;
+    font-kerning: normal;
+    letter-spacing: 0;
+    hanging-punctuation: none;
+  }
+
   /* Continuous justified Mushaf flow (RTL, shaping-safe) */
   .mushaf-flow {
     direction: rtl;
@@ -322,6 +335,10 @@
     text-align-last: center;
     text-justify: inter-word;
     unicode-bidi: isolate;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga" 1, "calt" 1, "rlig" 1, "ccmp" 1, "mark" 1, "mkmk" 1;
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-font-smoothing: antialiased;
   }
   .mushaf-ayah {
     cursor: pointer;
