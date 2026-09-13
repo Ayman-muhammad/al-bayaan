@@ -16,6 +16,13 @@ import {
   type QuranPrefs,
 } from "@/lib/quranPrefs";
 
+export interface PageMeta {
+  page: number;
+  juz: number;
+  surahNameAr: string;
+  surahNameEn: string;
+}
+
 interface Props {
   page: number;
   onPageChange: (page: number) => void;
@@ -24,6 +31,8 @@ interface Props {
   activeAyah: number | null;
   renderText: (text: string) => ReactNode;
   onAyahTap: (ayah: PageAyah) => void;
+  /** Reports the loaded page's juz/surah so the parent can render chips. */
+  onPageMeta?: (meta: PageMeta) => void;
 }
 
 /**
@@ -40,6 +49,7 @@ const MushafPageSpread = ({
   activeAyah,
   renderText,
   onAyahTap,
+  onPageMeta,
 }: Props) => {
   const [data, setData] = useState<MushafPageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,13 +66,19 @@ const MushafPageSpread = ({
         if (cancelled) return;
         setData(d);
         prefetchAround(page);
+        onPageMeta?.({
+          page: d.page,
+          juz: d.juz,
+          surahNameAr: d.ayahs[0]?.surahNameAr ?? "",
+          surahNameEn: d.ayahs[0]?.surahNameEn ?? "",
+        });
       })
       .catch(() => !cancelled && setError(true))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [page, onPageMeta]);
 
   const go = (delta: number) => {
     const next = page + delta;
@@ -120,7 +136,7 @@ const MushafPageSpread = ({
 
         {data && (
           <div
-            className="mushaf-flow font-arabic px-3 sm:px-6 py-5"
+            className="mushaf-flow quran-arabic font-arabic px-3 sm:px-6 py-5"
             style={{
               fontFamily: FONT_FAMILY_CSS[prefs.font_family],
               fontSize: `${fontSizeToPx(prefs.font_size_level)}px`,
@@ -193,20 +209,28 @@ const MushafPageSpread = ({
         <button
           onClick={() => go(-1)}
           disabled={page <= 1}
-          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-border disabled:opacity-40"
+          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-accent/40 text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
         >
           <ChevronLeft className="w-4 h-4" /> {isAr ? "السابقة" : "Previous"}
         </button>
-        <div className="text-[11px]" style={{ color: "var(--mushaf-muted)" }}>
+        <div className="text-[11px] font-medium" style={{ color: "var(--mushaf-muted)" }}>
           {isAr ? `صفحة ${page} من ${TOTAL_MUSHAF_PAGES}` : `Page ${page} of ${TOTAL_MUSHAF_PAGES}`}
         </div>
         <button
           onClick={() => go(1)}
           disabled={page >= TOTAL_MUSHAF_PAGES}
-          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-border disabled:opacity-40"
+          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-accent/40 text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
         >
           {isAr ? "التالية" : "Next"} <ChevronRight className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Reading progress through the 604-page Mushaf */}
+      <div className="mt-3 h-1 rounded-full bg-border/60 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-[width] duration-300"
+          style={{ width: `${(page / TOTAL_MUSHAF_PAGES) * 100}%` }}
+        />
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
 import MushafPage from "@/components/MushafPage";
-import MushafPageSpread from "@/components/MushafPageSpread";
+import MushafPageSpread, { type PageMeta } from "@/components/MushafPageSpread";
 import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
@@ -66,6 +66,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   );
   const [controlsOpen, setControlsOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
+  const [pageMeta, setPageMeta] = useState<PageMeta | null>(null);
+  const handlePageMeta = useCallback((meta: PageMeta) => setPageMeta(meta), []);
   const deepLinkDone = useRef(false);
   /**
    * Family Cycle: the reading itself is the completion signal — when the reader
@@ -648,6 +650,23 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
           onScroll={onReadScroll}
           className={`flex-1 overflow-y-auto scrollbar-thin mushaf-theme-${prefs.page_theme} mushaf-surface`}
         >
+          {/* Compact context chips: surah • juz • page (Islamatics-style) */}
+          {pageMode && (
+            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-3 sm:px-4 py-2 backdrop-blur-md bg-card/70 border-b border-border/40">
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/25 font-arabic truncate max-w-[40%]">
+                {pageMeta ? `سورة ${pageMeta.surahNameAr}` : selectedSurah.name.ar}
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-accent/10 text-accent border border-accent/25">
+                {isAr ? `الجزء ${pageMeta?.juz ?? "…"}` : `Juz ${pageMeta?.juz ?? "…"}`}
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                {isAr ? `صفحة ${mushafPageNum}` : `Page ${mushafPageNum}`}
+              </span>
+              <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+                {Math.round((mushafPageNum / TOTAL_MUSHAF_PAGES) * 100)}%
+              </span>
+            </div>
+          )}
           {!mushafMode && !pageMode && (
             <div className="text-center py-4 space-y-1 border-b border-border/40">
               <h2 className="font-arabic text-2xl">{selectedSurah.name.ar}</h2>
@@ -767,6 +786,7 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
               activeAyah={activeAyah}
               renderText={renderTajweed}
               onAyahTap={(a) => playAyah(a.surahNumber, a.numberInSurah, a.number)}
+              onPageMeta={handlePageMeta}
             />
           ) : loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
