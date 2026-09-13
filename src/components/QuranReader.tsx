@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuranPrefs, FONT_FAMILY_CSS, fontSizeToPx, LINE_SPACING_CSS, WORD_SPACING_CSS } from "@/lib/quranPrefs";
 import QuranPrefsSheet from "@/components/QuranPrefsSheet";
 import MushafPage from "@/components/MushafPage";
-import MushafPageSpread from "@/components/MushafPageSpread";
+import MushafPageSpread, { type PageMeta } from "@/components/MushafPageSpread";
 import { pageForAyah, TOTAL_MUSHAF_PAGES } from "@/lib/mushafPages";
 import FamilyDoneButton from "@/components/FamilyDoneButton";
 import { useFamilyMode } from "@/lib/familyMode";
@@ -66,6 +66,8 @@ const QuranReader = ({ onBack }: QuranReaderProps) => {
   );
   const [controlsOpen, setControlsOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<SearchTab>("keyword");
+  const [pageMeta, setPageMeta] = useState<PageMeta | null>(null);
+  const handlePageMeta = useCallback((meta: PageMeta) => setPageMeta(meta), []);
   const deepLinkDone = useRef(false);
   /**
    * Family Cycle: the reading itself is the completion signal — when the reader
