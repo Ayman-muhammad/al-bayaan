@@ -209,20 +209,28 @@ const MushafPageSpread = ({
         <button
           onClick={() => go(-1)}
           disabled={page <= 1}
-          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-border disabled:opacity-40"
+          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-accent/40 text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
         >
           <ChevronLeft className="w-4 h-4" /> {isAr ? "السابقة" : "Previous"}
         </button>
-        <div className="text-[11px]" style={{ color: "var(--mushaf-muted)" }}>
+        <div className="text-[11px] font-medium" style={{ color: "var(--mushaf-muted)" }}>
           {isAr ? `صفحة ${page} من ${TOTAL_MUSHAF_PAGES}` : `Page ${page} of ${TOTAL_MUSHAF_PAGES}`}
         </div>
         <button
           onClick={() => go(1)}
           disabled={page >= TOTAL_MUSHAF_PAGES}
-          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-border disabled:opacity-40"
+          className="flex items-center gap-1 px-4 py-2.5 rounded-full text-xs font-semibold bg-card/80 border border-accent/40 text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40"
         >
           {isAr ? "التالية" : "Next"} <ChevronRight className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Reading progress through the 604-page Mushaf */}
+      <div className="mt-3 h-1 rounded-full bg-border/60 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-[width] duration-300"
+          style={{ width: `${(page / TOTAL_MUSHAF_PAGES) * 100}%` }}
+        />
       </div>
     </div>
   );
