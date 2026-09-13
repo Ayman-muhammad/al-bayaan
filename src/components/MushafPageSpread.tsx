@@ -49,6 +49,7 @@ const MushafPageSpread = ({
   activeAyah,
   renderText,
   onAyahTap,
+  onPageMeta,
 }: Props) => {
   const [data, setData] = useState<MushafPageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,13 +66,19 @@ const MushafPageSpread = ({
         if (cancelled) return;
         setData(d);
         prefetchAround(page);
+        onPageMeta?.({
+          page: d.page,
+          juz: d.juz,
+          surahNameAr: d.ayahs[0]?.surahNameAr ?? "",
+          surahNameEn: d.ayahs[0]?.surahNameEn ?? "",
+        });
       })
       .catch(() => !cancelled && setError(true))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [page, onPageMeta]);
 
   const go = (delta: number) => {
     const next = page + delta;
@@ -129,7 +136,7 @@ const MushafPageSpread = ({
 
         {data && (
           <div
-            className="mushaf-flow font-arabic px-3 sm:px-6 py-5"
+            className="mushaf-flow quran-arabic font-arabic px-3 sm:px-6 py-5"
             style={{
               fontFamily: FONT_FAMILY_CSS[prefs.font_family],
               fontSize: `${fontSizeToPx(prefs.font_size_level)}px`,
