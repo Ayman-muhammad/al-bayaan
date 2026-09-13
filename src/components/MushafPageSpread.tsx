@@ -16,6 +16,13 @@ import {
   type QuranPrefs,
 } from "@/lib/quranPrefs";
 
+export interface PageMeta {
+  page: number;
+  juz: number;
+  surahNameAr: string;
+  surahNameEn: string;
+}
+
 interface Props {
   page: number;
   onPageChange: (page: number) => void;
@@ -24,6 +31,8 @@ interface Props {
   activeAyah: number | null;
   renderText: (text: string) => ReactNode;
   onAyahTap: (ayah: PageAyah) => void;
+  /** Reports the loaded page's juz/surah so the parent can render chips. */
+  onPageMeta?: (meta: PageMeta) => void;
 }
 
 /**
